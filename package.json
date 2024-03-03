@@ -1,0 +1,47 @@
+{
+  "name": "cloud-game-driver",
+  "version": "1.0.0",
+  "description": "A cloud game driver and automator",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "NODE_DEBUG=cloud-game-driver nyc ava --timeout=10s --verbose",
+    "test:dev": "NODE_DEBUG=cloud-game-driver nyc ava --timeout=10s --verbose && npm run report:dev",
+    "lint": "eslint .",
+    "fix": "eslint . --fix",
+    "posttest": "npm run report",
+    "report": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "report:dev": "nyc report --reporter=html && npm run report:open",
+    "report:open": "open coverage/index.html"
+  },
+  "files": [
+    "src/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/kaelzhang/cloud-game-driver.git"
+  },
+  "keywords": [
+    "cloud-game-driver"
+  ],
+  "engines": {
+    "node": ">= 6"
+  },
+  "ava": {
+    "files": [
+      "test/*.test.js"
+    ]
+  },
+  "author": "kaelzhang",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kaelzhang/cloud-game-driver/issues"
+  },
+  "devDependencies": {
+    "@ostai/eslint-config": "^3.5.0",
+    "ava": "^3.7.0",
+    "codecov": "^3.6.5",
+    "eslint": "^6.8.0",
+    "eslint-plugin-import": "^2.20.2",
+    "nyc": "^15.0.1"
+  }
+}
