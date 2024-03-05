@@ -11,7 +11,8 @@
     "posttest": "npm run report",
     "report": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "report:dev": "nyc report --reporter=html && npm run report:open",
-    "report:open": "open coverage/index.html"
+    "report:open": "open coverage/index.html",
+    "start": "electron ."
   },
   "files": [
     "src/"
@@ -41,7 +42,11 @@
     "ava": "^3.7.0",
     "codecov": "^3.6.5",
     "eslint": "^6.8.0",
+    "electron": "^29.1.0",
     "eslint-plugin-import": "^2.20.2",
     "nyc": "^15.0.1"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
   }
 }
