@@ -48,8 +48,28 @@ function createControlWindow () {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // createWindow()
+  const window = createWindow()
   createControlWindow()
+
+  const {webContents} = window
+
+  setTimeout(() => {
+    webContents.sendInputEvent({
+      type: 'mouseDown',
+      x: 447,
+      y: 553,
+      button: 'left',
+      clickCount: 1
+    })
+
+    webContents.sendInputEvent({
+      type: 'mouseUp',
+      x: 447,
+      y: 553,
+      button: 'left',
+      clickCount: 1
+    })
+  }, 3000)
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
@@ -67,3 +87,5 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+// contents.sendInputEvent({type:'mouseDown', x:300, y: 250, button:'left', clickCount: 1});
