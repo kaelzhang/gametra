@@ -96,14 +96,16 @@ class Crop {
       return this.left_to_harvest
     }
 
-    return harvest_after
+    return harvest_after < 0
+      ? 0
+      : harvest_after
   }
 }
 
 const crop = new Crop(
   TYPES.ONE_DAY,
-  d(1, 4),
-  h(10, 6),
+  h(17, 6),
+  h(10, 30),
   // new Date('2024-05-15 0:56:25').getTime()
 )
 
