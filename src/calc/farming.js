@@ -104,9 +104,16 @@ class Crop {
 
 const crop = new Crop(
   TYPES.ONE_DAY,
-  h(17, 6),
-  h(10, 30),
-  // new Date('2024-05-15 0:56:25').getTime()
+  h(4, 28),
+  h(10, 39),
+  // new Date('2024-05-16 0:13:56').getTime()
 )
+
+// const crop = new Crop(
+//   TYPES.ONE_HOUR,
+//   m(35, 8),
+//   m(18, 21),
+//   new Date('2024-05-16 0:24:18').getTime()
+// )
 
 console.log(crop.earlest_harvest_time.toString())
