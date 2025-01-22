@@ -38,15 +38,13 @@
     "url": "https://github.com/kaelzhang/cloud-game-driver/issues"
   },
   "devDependencies": {
-    "@ostai/eslint-config": "^3.5.0",
-    "ava": "^3.7.0",
-    "codecov": "^3.6.5",
-    "electron": "^29.1.0",
-    "eslint": "^6.8.0",
-    "eslint-plugin-import": "^2.20.2",
-    "nyc": "^15.0.1"
+    "@ostai/eslint-config": "^4.0.0",
+    "ava": "^6.2.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-import": "^2.31.0",
+    "nyc": "^17.1.0"
   },
   "dependencies": {
-    "vue": "^3.4.26"
+    "electron": "^34.0.0"
   }
 }

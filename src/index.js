@@ -1,18 +1,22 @@
 const {
   app,
   BrowserWindow,
-  // Menu
+  ipcMain
 } = require('electron')
 const path = require('node:path')
 
+let mainWindow
+
 function createWindow () {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 600,
-    resizable: false,
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      nodeIntegration: true,
+      contextIsolation: false,
+      preload: path.join(__dirname, 'preload.js'),
+      // Set user agent to mimic Chrome browser
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
   })
 
@@ -27,57 +31,32 @@ function createWindow () {
   // Open the DevTools.
   mainWindow.webContents.openDevTools()
 
+  const filepath = path.join(__dirname, 'index.html')
+  // Load initial URL
+  mainWindow.loadURL(`file://${filepath}`)
+
   return mainWindow
 }
 
-function createControlWindow () {
-  const controlWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
-    // webPreferences: {
-    //   preload: path.join(__dirname, 'preload.js')
-    // }
-  })
-
-  controlWindow.loadFile('control.html')
-
-  return controlWindow
-}
+// Handle auto-click configuration
+ipcMain.on('start-auto-click', (event, config) => {
+  mainWindow.webContents.executeJavaScript(`
+    startAutoClick(${JSON.stringify(config)});
+  `)
+})
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  const window = createWindow()
-  createControlWindow()
-
-  const {webContents} = window
-
-  setTimeout(() => {
-    webContents.sendInputEvent({
-      type: 'mouseDown',
-      x: 447,
-      y: 553,
-      button: 'left',
-      clickCount: 1
-    })
-
-    webContents.sendInputEvent({
-      type: 'mouseUp',
-      x: 447,
-      y: 553,
-      button: 'left',
-      clickCount: 1
-    })
-  }, 3000)
+  createWindow()
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    // if (BrowserWindow.getAllWindows().length === 0) {
-    //   createWindow()
-    //   createControlWindow()
-    // }
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
   })
 })
 
@@ -87,5 +66,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
-
-// contents.sendInputEvent({type:'mouseDown', x:300, y: 250, button:'left', clickCount: 1});
