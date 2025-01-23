@@ -1,8 +1,8 @@
 {
   "name": "cloud-game-driver",
+  "private": true,
   "version": "1.0.0",
   "description": "A cloud game driver and automator",
-  "main": "src/index.js",
   "scripts": {
     "test": "NODE_DEBUG=cloud-game-driver nyc ava --timeout=10s --verbose",
     "test:dev": "NODE_DEBUG=cloud-game-driver nyc ava --timeout=10s --verbose && npm run report:dev",
@@ -45,6 +45,7 @@
     "nyc": "^17.1.0"
   },
   "dependencies": {
-    "electron": "^34.0.0"
+    "puppeteer": "^22.0.0",
+    "express": "^4.18.2"
   }
 }

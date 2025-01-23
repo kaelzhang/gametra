@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Game Driver</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Auto Clicker</h1>
+
+  <div class="form-group">
+    <label for="urlInput">Target URL:</label>
+    <input type="text" id="urlInput" placeholder="Enter URL">
+  </div>
+
+  <div class="form-group">
+    <label for="xCoord">X Coordinate:</label>
+    <input type="number" id="xCoord" placeholder="X coordinate">
+  </div>
+
+  <div class="form-group">
+    <label for="yCoord">Y Coordinate:</label>
+    <input type="number" id="yCoord" placeholder="Y coordinate">
+  </div>
+
+  <div class="form-group">
+    <label for="intervalInput">Click Interval (ms):</label>
+    <input type="number" id="intervalInput" placeholder="Interval in milliseconds">
+  </div>
+
+  <button onclick="startClicking()">Start</button>
+  <button onclick="stopClicking()">Stop</button>
+
+  <script>
+    async function startClicking() {
+      const config = {
+        url: document.getElementById('urlInput').value,
+        interval: parseInt(document.getElementById('intervalInput').value, 10),
+        x: parseInt(document.getElementById('xCoord').value, 10),
+        y: parseInt(document.getElementById('yCoord').value, 10)
+      }
+
+      try {
+        const response = await fetch('/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(config)
+        })
+        const data = await response.json()
+        if (!data.success) {
+          alert('Failed to start auto-clicking')
+        }
+      } catch (error) {
+        alert('Error: ' + error.message)
+      }
+    }
+
+    async function stopClicking() {
+      try {
+        const response = await fetch('/stop', {
+          method: 'POST'
+        })
+        const data = await response.json()
+        if (!data.success) {
+          alert('Failed to stop auto-clicking')
+        }
+      } catch (error) {
+        alert('Error: ' + error.message)
+      }
+    }
+  </script>
+</body>
+</html>
