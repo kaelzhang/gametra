@@ -1,7 +1,5 @@
 const puppeteer = require('puppeteer')
 
-const {ViewportDescripter} = require('./matcher')
-
 const USERAGENT_CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36'
 
 
@@ -17,7 +15,7 @@ class Game {
   }
 
   viewport (...args) {
-    return new ViewportDescripter(game, ...args)
+    return new ViewportDescripter(this._page, ...args)
   }
 
   async launch () {
@@ -41,98 +39,31 @@ class Game {
   //   )
   // )
   waitUntil (matcher) {
-
+    return matcher.success()
   }
-}
 
-
-const express = require('express')
-const path = require('path')
-
-const app = express()
-const port = 3000
-let browser
-let page
-
-// Serve static files
-app.use(express.static(path.join(__dirname, '..', 'control-panel')))
-app.use(express.json())
-
-// Initialize browser
-async function initBrowser() {
-  browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-    args: ['--start-maximized']
-  })
-  return browser
-}
-
-// Start auto-clicking
-app.post('/start', async (req, res) => {
-  const { url, x, y, interval } = req.body
-
-  try {
-    if (!browser) {
-      browser = await initBrowser()
-    }
-
-    page = await browser.newPage()
-
-    // Set a common user agent
-    await page.setUserAgent(USERAGENT_CHROME)
-
-    await page.goto(url)
-
+  async click (x, y) {
     // Start clicking interval
-    await page.evaluate((x, y, interval) => {
-      window.clickInterval = setInterval(() => {
-        const clickEvent = new MouseEvent('click', {
-          view: window,
-          bubbles: true,
-          cancelable: true,
-          clientX: x,
-          clientY: y,
-          screenX: x,
-          screenY: y,
-          button: 0
-        })
-        document.elementFromPoint(x, y)?.dispatchEvent(clickEvent)
-      }, interval)
-    }, x, y, interval)
-
-    res.json({ success: true })
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-// Stop auto-clicking
-app.post('/stop', async (req, res) => {
-  try {
-    if (page) {
-      await page.evaluate(() => {
-        if (window.clickInterval) {
-          clearInterval(window.clickInterval)
-          window.clickInterval = null
-        }
+    await page.evaluate((x, y) => {
+      const clickEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y,
+        screenX: x,
+        screenY: y,
+        button: 0
       })
-      await page.close()
-    }
-    res.json({ success: true })
-  } catch (error) {
-    res.status(500).json({ error: error.message })
+      document.elementFromPoint(x, y)?.dispatchEvent(clickEvent)
+    }, x, y)
   }
-})
 
-// Cleanup on exit
-process.on('SIGINT', async () => {
-  if (browser) {
-    await browser.close()
+  async keypress () {
+
   }
-  process.exit()
-})
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`)
-})
+  close () {
+    return this._browser?.close()
+  }
+}
