@@ -1,4 +1,5 @@
 const delay = require('delay')
+const ssim = require('ssim')
 
 const UNDEFINED = void 0
 
@@ -98,12 +99,20 @@ class ImageMatcher extends IntervalMatcher {
   }
 
   async _check () {
-    const viewport = await this._descripter.fetch()
+    const viewport = await this._descripter.get()
 
     // Compare the similarity between `viewport` and `this._to`,
-    //   if the similarity is greater than `this._similarity`,
-    //   return true
-    //   otherwise, return false
-
+    const similarity = this._compare(viewport, this._to)
+    return similarity >= this._similarity
   }
+
+  _compare (viewport, to) {
+    const {mssim} = ssim(viewport, to)
+    return mssim
+  }
+}
+
+module.exports = {
+  ImageMatcher,
+  ViewportDescripter
 }

@@ -44,26 +44,19 @@ class Game {
 
   async click (x, y) {
     // Start clicking interval
-    await page.evaluate((x, y) => {
-      const clickEvent = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-        clientX: x,
-        clientY: y,
-        screenX: x,
-        screenY: y,
-        button: 0
-      })
-      document.elementFromPoint(x, y)?.dispatchEvent(clickEvent)
-    }, x, y)
+    await this._page.mouse.click(x, y)
   }
 
-  async keypress () {
+  // async keypress () {
 
-  }
+  // }
 
   close () {
     return this._browser?.close()
   }
+}
+
+
+module.exports = {
+  Game
 }
