@@ -12,7 +12,7 @@
     "report": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "report:dev": "nyc report --reporter=html && npm run report:open",
     "report:open": "open coverage/index.html",
-    "start": "node src/games/letsgo/index.js"
+    "start": "electron src/games/letsgo/index.js"
   },
   "files": [
     "src/"
@@ -45,7 +45,6 @@
     "nyc": "^17.1.0"
   },
   "dependencies": {
-    "delay": "^6.0.0",
     "electron": "^34.0.1",
     "express": "^4.18.2",
     "pngjs": "^7.0.0",

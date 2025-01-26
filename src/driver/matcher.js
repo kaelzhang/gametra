@@ -1,5 +1,5 @@
-const delay = require('delay')
-const ssim = require('ssim')
+const {setTimeout} = require('node:timers/promises')
+const ssim = require('ssim.js')
 
 const UNDEFINED = void 0
 
@@ -31,14 +31,14 @@ class IntervalMatcher extends Matcher {
 
     const wait = this._interval - (Date.now() - this._lastChecked)
     if (wait > 0) {
-      await delay(wait)
+      await setTimeout(wait)
     }
 
     return
   }
 
   match () {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       while (true) {
         if (this._canceled) {
           return
