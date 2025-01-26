@@ -8,7 +8,7 @@ const {
 const {
   UNDEFINED,
   NOOP
-} = require('../const')
+} = require('../../const')
 
 
 class ElectronDelegate {
@@ -68,6 +68,21 @@ class ElectronDelegate {
       }
     })
 
+    // Create control panel window
+    this._controlPanel = new BrowserWindow({
+      width: 200,
+      height: 400,
+      x: mainWindow.getBounds().x + 1000, // Position right of main window
+      y: mainWindow.getBounds().y,
+      resizable: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+
+    this._controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+
     let resolve
 
     const promise = new Promise((_resolve) => {
@@ -117,6 +132,34 @@ class ElectronDelegate {
       width,
       height
     })
+  }
+
+  async captureRegion(bounds) {
+    const {x, y, width, height} = bounds
+    const image = await this.screenshot(x, y, width, height)
+    const buffer = image.toPNG()
+
+    const fs = require('fs')
+    const path = require('path')
+
+    const timestamp = Date.now()
+    const imagePath = path.join('games', 'letsgo', 'assets', `capture_${timestamp}.png`)
+    const jsonPath = path.join('games', 'letsgo', 'assets', `capture_${timestamp}.json`)
+
+    fs.writeFileSync(imagePath, buffer)
+    fs.writeFileSync(jsonPath, JSON.stringify(bounds))
+
+    return {imagePath, jsonPath}
+  }
+
+  async getPixelColor(x, y) {
+    const image = await this.screenshot(x, y, 1, 1)
+    const buffer = image.toBitmap()
+    return {
+      r: buffer[2],
+      g: buffer[1],
+      b: buffer[0]
+    }
   }
 }
 
