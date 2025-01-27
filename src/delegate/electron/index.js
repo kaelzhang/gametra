@@ -1,4 +1,5 @@
 const {join} = require('node:path')
+const fs = require('node:fs/promises')
 
 const {
   BrowserWindow,
@@ -116,8 +117,10 @@ class ElectronDelegate {
     this._controlPanel.loadFile(join(__dirname, 'control-panel.html'))
   }
 
+  // Add IPC handlers
   _initIPCHandlers () {
-    // Add IPC handlers
+    // Sent from the control panel
+    // ------------------------------------------------------------
     ipcMain.on('start-capture-mode', () => {
       this._mainWindow.webContents.send('capture-mode-change', true)
     })
@@ -134,19 +137,20 @@ class ElectronDelegate {
       this._mainWindow.webContents.send('color-picker-mode-change', false)
     })
 
+    // Sent from the main window
+    // ------------------------------------------------------------
     ipcMain.on('capture-region', async (event, bounds) => {
       try {
         const result = await this._captureRegion(bounds)
         event.reply('capture-complete', result)
       } catch (error) {
-        console.error('Screenshot failed:', error)
         event.reply('capture-error', error.message)
       }
     })
 
     ipcMain.on('get-color', async (event, position) => {
       try {
-        const color = await this.getPixelColor(position.x, position.y)
+        const color = await this._getPixelColor(position.x, position.y)
         this._controlPanel.webContents.send('color-update', color)
       } catch (error) {
         console.error('Color picking failed:', error)
@@ -186,20 +190,17 @@ class ElectronDelegate {
     const image = await this.screenshot(x, y, width, height)
     const buffer = image.toPNG()
 
-    const fs = require('fs')
-    const path = require('path')
-
     const timestamp = Date.now()
-    const imagePath = path.join('games', 'letsgo', 'assets', `capture_${timestamp}.png`)
-    const jsonPath = path.join('games', 'letsgo', 'assets', `capture_${timestamp}.json`)
+    const imagePath = join(DOWNLOAD_PATH, `capture_${timestamp}.png`)
+    const jsonPath = join(DOWNLOAD_PATH, `capture_${timestamp}.json`)
 
-    fs.writeFileSync(imagePath, buffer)
-    fs.writeFileSync(jsonPath, JSON.stringify(bounds))
+    await fs.writeFile(imagePath, buffer)
+    await fs.writeFile(jsonPath, JSON.stringify(bounds))
 
     return {imagePath, jsonPath}
   }
 
-  async getPixelColor(x, y) {
+  async _getPixelColor(x, y) {
     const image = await this.screenshot(x, y, 1, 1)
     const buffer = image.toBitmap()
     return {
