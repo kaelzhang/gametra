@@ -2,13 +2,16 @@ const {join} = require('node:path')
 
 const {
   BrowserWindow,
-  app
+  app,
+  ipcMain
 } = require('electron')
 
 const {
   UNDEFINED,
   NOOP
 } = require('../../const')
+
+const DOWNLOAD_PATH = join(__dirname, 'downloads')
 
 
 class ElectronDelegate {
@@ -60,28 +63,15 @@ class ElectronDelegate {
     userAgent
   }) {
     const mainWindow = this._mainWindow = new BrowserWindow({
-      width: 1000,
-      height: 600,
+      width,
+      height,
       resizable: false,
       webPreferences: {
         preload: join(__dirname, 'preload.js')
       }
     })
 
-    // Create control panel window
-    this._controlPanel = new BrowserWindow({
-      width: 200,
-      height: 400,
-      x: mainWindow.getBounds().x + 1000, // Position right of main window
-      y: mainWindow.getBounds().y,
-      resizable: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
-      }
-    })
-
-    this._controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+    this._createControlPanel()
 
     let resolve
 
@@ -105,6 +95,63 @@ class ElectronDelegate {
     })
 
     return promise
+  }
+
+  _createControlPanel () {
+    const mainWindow = this._mainWindow
+    const bounds = mainWindow.getBounds()
+
+    this._controlPanel = new BrowserWindow({
+      width: 200,
+      height: 400,
+      x: bounds.x + bounds.width,
+      y: bounds.y,
+      resizable: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+
+    this._controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+  }
+
+  _initIPCHandlers () {
+    // Add IPC handlers
+    ipcMain.on('start-capture-mode', () => {
+      this._mainWindow.webContents.send('capture-mode-change', true)
+    })
+
+    ipcMain.on('stop-capture-mode', () => {
+      this._mainWindow.webContents.send('capture-mode-change', false)
+    })
+
+    ipcMain.on('start-color-picker-mode', () => {
+      this._mainWindow.webContents.send('color-picker-mode-change', true)
+    })
+
+    ipcMain.on('stop-color-picker-mode', () => {
+      this._mainWindow.webContents.send('color-picker-mode-change', false)
+    })
+
+    ipcMain.on('capture-region', async (event, bounds) => {
+      try {
+        const result = await this._captureRegion(bounds)
+        event.reply('capture-complete', result)
+      } catch (error) {
+        console.error('Screenshot failed:', error)
+        event.reply('capture-error', error.message)
+      }
+    })
+
+    ipcMain.on('get-color', async (event, position) => {
+      try {
+        const color = await this.getPixelColor(position.x, position.y)
+        this._controlPanel.webContents.send('color-update', color)
+      } catch (error) {
+        console.error('Color picking failed:', error)
+      }
+    })
   }
 
   async click (x, y) {
@@ -134,7 +181,7 @@ class ElectronDelegate {
     })
   }
 
-  async captureRegion(bounds) {
+  async _captureRegion(bounds) {
     const {x, y, width, height} = bounds
     const image = await this.screenshot(x, y, width, height)
     const buffer = image.toPNG()
