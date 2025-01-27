@@ -68,7 +68,9 @@ class ElectronDelegate {
       height,
       resizable: false,
       webPreferences: {
-        preload: join(__dirname, 'preload.js')
+        preload: join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
       }
     })
 
@@ -91,9 +93,7 @@ class ElectronDelegate {
       webContents.focus()
     })
 
-    mainWindow.loadURL(url, {
-      userAgent
-    })
+    await mainWindow.loadURL(url)
 
     return promise
   }
