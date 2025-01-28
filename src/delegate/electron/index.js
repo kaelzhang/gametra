@@ -77,6 +77,11 @@ class ElectronDelegate {
       }
     })
 
+    // open devtools in exeternal window
+    mainWindow.webContents.openDevTools({
+      mode: 'external'
+    })
+
     this._createControlPanel()
     this._initIPCHandlers()
 
@@ -126,24 +131,29 @@ class ElectronDelegate {
     // Sent from the control panel
     // ------------------------------------------------------------
     ipcMain.on('start-capture-mode', () => {
+      log('received "start-capture-mode" from control panel')
       this._mainWindow.webContents.send('capture-mode-change', true)
     })
 
     ipcMain.on('stop-capture-mode', () => {
+      log('received "stop-capture-mode" from control panel')
       this._mainWindow.webContents.send('capture-mode-change', false)
     })
 
     ipcMain.on('start-color-picker-mode', () => {
+      log('received "start-color-picker-mode" from control panel')
       this._mainWindow.webContents.send('color-picker-mode-change', true)
     })
 
     ipcMain.on('stop-color-picker-mode', () => {
+      log('received "stop-color-picker-mode" from control panel')
       this._mainWindow.webContents.send('color-picker-mode-change', false)
     })
 
     // Sent from the main window
     // ------------------------------------------------------------
     ipcMain.on('capture-region', async (event, bounds) => {
+      log('received "capture-region" from main window')
       try {
         const result = await this._captureRegion(bounds)
         event.reply('capture-complete', result)
@@ -153,6 +163,7 @@ class ElectronDelegate {
     })
 
     ipcMain.on('get-color', async (event, position) => {
+      log('received "get-color" from main window')
       try {
         const color = await this._getPixelColor(position.x, position.y)
         this._controlPanel.webContents.send('color-update', color)

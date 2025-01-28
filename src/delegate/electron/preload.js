@@ -9,8 +9,9 @@ let selectionElement = null
 
 // Create and inject selection overlay styles
 const style = document.createElement('style')
+style.id = 'gametra-region-select-overlay-style'
 style.textContent = `
-  .region-select-overlay {
+  .gametra-region-select-overlay {
     position: fixed;
     border: 2px solid #0095ff;
     background: rgba(0, 149, 255, 0.1);
@@ -18,13 +19,17 @@ style.textContent = `
     z-index: 9999;
   }
 `
-document.head.appendChild(style)
+
+// Only inject the style when document is ready
+document.addEventListener('DOMContentLoaded', () => {
+  document.head.appendChild(style)
+})
 
 // Helper function to create/update selection overlay
 function updateSelectionOverlay(startX, startY, endX, endY) {
   if (!selectionElement) {
     selectionElement = document.createElement('div')
-    selectionElement.className = 'region-select-overlay'
+    selectionElement.className = 'gametra-region-select-overlay'
     document.body.appendChild(selectionElement)
   }
 

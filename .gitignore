@@ -1,3 +1,6 @@
+# Project
+**/downloads/
+
 # Node, Coverage, NPM
 /.nyc_output
 /coverage
