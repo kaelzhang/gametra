@@ -1,7 +1,8 @@
 const {join} = require('node:path')
 const fs = require('node:fs/promises')
 const {
-  log
+  log,
+  Viewport
 } = require('../../util')
 
 const {
@@ -142,7 +143,10 @@ class ElectronDelegate {
     // ------------------------------------------------------------
     ipcMain.on('start-capture-mode', () => {
       log('received "start-capture-mode" from control panel')
-      this._mainWindow.webContents.send('capture-mode-change', true)
+
+      const {webContents} = this._mainWindow
+      webContents.focus()
+      webContents.send('capture-mode-change', true)
     })
 
     ipcMain.on('stop-capture-mode', () => {
@@ -150,14 +154,17 @@ class ElectronDelegate {
       this._mainWindow.webContents.send('capture-mode-change', false)
     })
 
-    ipcMain.on('start-color-picker-mode', () => {
-      log('received "start-color-picker-mode" from control panel')
-      this._mainWindow.webContents.send('color-picker-mode-change', true)
+    ipcMain.on('start-pixel-picker-mode', () => {
+      log('received "start-pixel-picker-mode" from control panel')
+
+      const {webContents} = this._mainWindow
+      webContents.focus()
+      webContents.send('pixel-picker-mode-change', true)
     })
 
-    ipcMain.on('stop-color-picker-mode', () => {
-      log('received "stop-color-picker-mode" from control panel')
-      this._mainWindow.webContents.send('color-picker-mode-change', false)
+    ipcMain.on('stop-pixel-picker-mode', () => {
+      log('received "stop-pixel-picker-mode" from control panel')
+      this._mainWindow.webContents.send('pixel-picker-mode-change', false)
     })
 
     // Sent from the main window
@@ -172,11 +179,11 @@ class ElectronDelegate {
       }
     })
 
-    ipcMain.on('get-color', async (event, position) => {
-      log('received "get-color" from main window')
+    ipcMain.on('get-pixel', async (event, position) => {
+      log('received "get-pixel" from main window')
       try {
-        const color = await this._getPixelColor(position.x, position.y)
-        this._controlPanel.webContents.send('color-update', color)
+        const pixel = await this._getPixel(position.x, position.y)
+        this._controlPanel.webContents.send('pixel-update', pixel)
       } catch (error) {
         console.error('Color picking failed:', error)
       }
@@ -199,42 +206,70 @@ class ElectronDelegate {
     })
   }
 
-  async screenshot (x, y, width, height) {
-    const {webContents} = this._mainWindow
+  async screenshot (viewport) {
+    const mainWindow = this._mainWindow
+    const {webContents} = mainWindow
 
-    return webContents.capturePage({
-      x,
-      y,
-      width,
-      height
-    })
+    if (!viewport) {
+      viewport = mainWindow.getBounds()
+    }
+
+    return webContents.capturePage(viewport)
   }
 
-  async _captureRegion(bounds) {
-    const {x, y, width, height} = bounds
-    const image = await this.screenshot(x, y, width, height)
+  async _captureRegion(viewport) {
+    const image = await this.screenshot(viewport)
     const buffer = image.toPNG()
 
-    const timestamp = Date.now()
-    const imagePath = join(DOWNLOAD_PATH, `capture_${timestamp}.png`)
-    const jsonPath = join(DOWNLOAD_PATH, `capture_${timestamp}.json`)
+    const bounds = viewport.object()
 
-    log('writing capture image to', DOWNLOAD_PATH, x, y, width, height)
+    log('writing capture image to', DOWNLOAD_PATH, bounds)
 
-    await fs.writeFile(imagePath, buffer)
-    await fs.writeFile(jsonPath, JSON.stringify(bounds))
+    const imagePath = await this._save(buffer)
+    const jsonPath = await this._save(bounds)
 
-    return {imagePath, jsonPath}
+    return {
+      imagePath,
+      jsonPath,
+      viewport: bounds
+    }
   }
 
-  async _getPixelColor(x, y) {
-    const image = await this.screenshot(x, y, 1, 1)
+  async _save (data, namePrefix = 'capture') {
+    const name = `${namePrefix}_${Date.now()}`
+
+    let filepath
+    let content
+
+    if (Buffer.isBuffer(data)) {
+      filepath = join(DOWNLOAD_PATH, `${name}.png`)
+      await fs.writeFile(filepath, data)
+    } else {
+      filepath = join(DOWNLOAD_PATH, `${name}.json`)
+      await fs.writeFile(filepath, JSON.stringify(data))
+    }
+
+    return filepath
+  }
+
+  async _getPixel(x, y) {
+    const image = await this.screenshot(new Viewport(x, y, 1, 1))
     const buffer = image.toBitmap()
-    return {
+    const rgb = {
       r: buffer[2],
       g: buffer[1],
       b: buffer[0]
     }
+
+    const data = {
+      x,
+      y,
+      rgb
+    }
+
+    await this._save(data, 'pixel')
+
+    return data
   }
 }
 

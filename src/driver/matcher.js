@@ -58,34 +58,10 @@ class IntervalMatcher extends Matcher {
 }
 
 
-class ViewportDescripter {
-  constructor(page, x, y, w, h) {
-    this._page = page
-    this._x = x
-    this._y = y
-    this._w = w
-    this._h = h
-  }
-
-  async get () {
-    // Fetch the certain viewport from page.screenshot
-    //   and return the buffer
-    return this._page.screenshot({
-      type: 'png',
-      clip: {
-        x: this._x,
-        y: this._y,
-        width: this._w,
-        height: this._h
-      }
-    })
-  }
-}
-
-
 class ImageMatcher extends IntervalMatcher {
   constructor (
-    descripter,
+    delegate,
+    viewport,
     // The target image buffer to match
     to, {
       checkInterval = 100,
@@ -93,13 +69,14 @@ class ImageMatcher extends IntervalMatcher {
     } = {}
   ) {
     super(checkInterval)
-    this._descripter = descripter
+    this._delegate = delegate
+    this._viewport = viewport
     this._to = to
     this._similarity = similarity
   }
 
   async _check () {
-    const viewport = await this._descripter.get()
+    const viewport = await this._delegate.screenshot(this._viewport)
 
     // Compare the similarity between `viewport` and `this._to`,
     const similarity = this._compare(viewport, this._to)
@@ -113,6 +90,5 @@ class ImageMatcher extends IntervalMatcher {
 }
 
 module.exports = {
-  ImageMatcher,
-  ViewportDescripter
+  ImageMatcher
 }
