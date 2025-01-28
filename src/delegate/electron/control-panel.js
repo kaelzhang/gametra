@@ -8,8 +8,9 @@ const captureBtn = document.getElementById('captureBtn')
 const pixelPickerBtn = document.getElementById('pixelPickerBtn')
 const pixelDisplay = document.getElementById('pixelDisplay')
 
-captureBtn.addEventListener('click', () => {
-  isCapturing = !isCapturing
+
+const toggleCaptureMode = (enable = !isCapturing) => {
+  isCapturing = enable
   captureBtn.textContent = isCapturing ? 'Cancel Capture' : 'Capture Region'
 
   if (isCapturing) {
@@ -17,19 +18,29 @@ captureBtn.addEventListener('click', () => {
   } else {
     ipcRenderer.send('stop-capture-mode')
   }
+}
+
+captureBtn.addEventListener('click', () => {
+  toggleCaptureMode()
 })
 
-pixelPickerBtn.addEventListener('click', () => {
-  isPickingPixel = !isPickingPixel
-  pixelPickerBtn.textContent = isPickingPixel ? 'Stop Picking' : 'Pick Pixel'
-  pixelDisplay.style.display = isPickingPixel ? 'block' : 'none'
 
-  if (isPickingPixel) {
+const togglePixelPickerMode = (enable = !isPickingPixel) => {
+  isPickingPixel = enable
+  pixelPickerBtn.textContent = enable ? 'Stop Picking' : 'Pick Pixel'
+  pixelDisplay.style.display = enable ? 'block' : 'none'
+
+  if (enable) {
     ipcRenderer.send('start-pixel-picker-mode')
   } else {
     ipcRenderer.send('stop-pixel-picker-mode')
   }
+}
+
+pixelPickerBtn.addEventListener('click', () => {
+  togglePixelPickerMode()
 })
+
 
 ipcRenderer.on('pixel-update', (event, pixel) => {
   const {x, y, rgb} = pixel
@@ -39,4 +50,12 @@ ipcRenderer.on('pixel-update', (event, pixel) => {
   pixelDisplay.style.color = (rgb.r + rgb.g + rgb.b) / 3 > 128
     ? 'black'
     : 'white'
+})
+
+ipcRenderer.on('capture-complete', (event, data) => {
+  toggleCaptureMode(false)
+})
+
+ipcRenderer.on('pixel-pick-complete', (event, data) => {
+  togglePixelPickerMode(false)
 })

@@ -123,10 +123,7 @@ window.addEventListener('mouseup', e => {
     }
 
     ipcRenderer.send('capture-region', bounds)
-    selectionOverlay.hide()
-    selectionMask.hide()
-    isCapturing = false
-    startPos = UNDEFINED
+    toggleCaptureMode(false)
   }
 
   if (isPickingPixel) {
@@ -135,26 +132,36 @@ window.addEventListener('mouseup', e => {
       y: e.clientY,
       save: true
     })
-    isPickingPixel = false
+    togglePixelPickerMode(false)
   }
 })
 
 
-// Handle mode change events from main process
-ipcRenderer.on('capture-mode-change', (event, enabled) => {
-  isCapturing = enabled
-  if (!enabled) {
+const toggleCaptureMode = enable => {
+  isCapturing = enable
+  if (!enable) {
     selectionOverlay.hide()
     selectionMask.hide()
     startPos = UNDEFINED
   }
+
   // Change cursor to crosshair when in capture mode
-  document.body.style.cursor = enabled ? 'crosshair' : 'default'
+  document.body.style.cursor = enable ? 'crosshair' : 'default'
+}
+
+// Handle mode change events from main process
+ipcRenderer.on('capture-mode-change', (event, enable) => {
+  toggleCaptureMode(enable)
 })
 
-ipcRenderer.on('pixel-picker-mode-change', (event, enabled) => {
+
+const togglePixelPickerMode = enable => {
   isPickingPixel = enabled
   // Change cursor to crosshair when in color picker mode
-  document.body.style.cursor = enabled ? 'crosshair' : 'default'
+  document.body.style.cursor = enable ? 'crosshair' : 'default'
+}
+
+ipcRenderer.on('pixel-picker-mode-change', (event, enable) => {
+  togglePixelPickerMode(enable)
 })
 

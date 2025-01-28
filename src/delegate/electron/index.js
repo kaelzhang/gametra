@@ -122,7 +122,7 @@ class ElectronDelegate {
     const mainWindow = this._mainWindow
     const bounds = mainWindow.getBounds()
 
-    this._controlPanel = new BrowserWindow({
+    const controlPanel = this._controlPanel = new BrowserWindow({
       width: 200,
       height: 400,
       x: bounds.x + bounds.width,
@@ -134,7 +134,14 @@ class ElectronDelegate {
       }
     })
 
-    this._controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+    controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+
+    if (this._debug) {
+      // open devtools in exeternal window
+      controlPanel.webContents.openDevTools({
+        mode: 'undocked'
+      })
+    }
   }
 
   // Add IPC handlers
@@ -174,6 +181,7 @@ class ElectronDelegate {
       try {
         const result = await this._captureRegion(bounds)
         event.reply('capture-complete', result)
+        this._controlPanel.webContents.send('capture-complete', result)
       } catch (error) {
         event.reply('capture-error', error.message)
       }
@@ -186,7 +194,6 @@ class ElectronDelegate {
 
       try {
         const pixel = await this._getPixel(x, y, save)
-        this._controlPanel.webContents.send('pixel-update', pixel)
       } catch (error) {
         console.error('Color picking failed:', error)
       }
@@ -264,17 +271,18 @@ class ElectronDelegate {
       b: buffer[0]
     }
 
-    const data = {
+    const pixel = {
       x,
       y,
       rgb
     }
 
     if (save) {
-      await this._save(data, 'pixel')
+      await this._save(pixel, 'pixel')
+      this._controlPanel.webContents.send('pixel-pick-complete', pixel)
     }
 
-    return data
+    return pixel
   }
 }
 
