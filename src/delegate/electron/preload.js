@@ -8,7 +8,7 @@ const {
 
 
 let isCapturing = false
-let isPickingColor = false
+let isPickingPixel = false
 let startPos = UNDEFINED
 
 class Element {
@@ -108,8 +108,8 @@ window.addEventListener('mousemove', e => {
     updateSelectionOverlay(startPos.x, startPos.y, e.clientX, e.clientY)
     selectionMask.show()
   }
-  if (isPickingColor) {
-    ipcRenderer.send('get-color', { x: e.clientX, y: e.clientY })
+  if (isPickingPixel) {
+    ipcRenderer.send('get-pixel', { x: e.clientX, y: e.clientY })
   }
 })
 
@@ -125,7 +125,17 @@ window.addEventListener('mouseup', e => {
     ipcRenderer.send('capture-region', bounds)
     selectionOverlay.hide()
     selectionMask.hide()
+    isCapturing = false
     startPos = UNDEFINED
+  }
+
+  if (isPickingPixel) {
+    ipcRenderer.send('get-pixel', {
+      x: e.clientX,
+      y: e.clientY,
+      save: true
+    })
+    isPickingPixel = false
   }
 })
 
@@ -142,8 +152,9 @@ ipcRenderer.on('capture-mode-change', (event, enabled) => {
   document.body.style.cursor = enabled ? 'crosshair' : 'default'
 })
 
-ipcRenderer.on('color-picker-mode-change', (event, enabled) => {
-  isPickingColor = enabled
+ipcRenderer.on('pixel-picker-mode-change', (event, enabled) => {
+  isPickingPixel = enabled
   // Change cursor to crosshair when in color picker mode
   document.body.style.cursor = enabled ? 'crosshair' : 'default'
 })
+

@@ -19,7 +19,7 @@ captureBtn.addEventListener('click', () => {
   }
 })
 
-colorPickerBtn.addEventListener('click', () => {
+pixelPickerBtn.addEventListener('click', () => {
   isPickingPixel = !isPickingPixel
   pixelPickerBtn.textContent = isPickingPixel ? 'Stop Picking' : 'Pick Pixel'
   pixelDisplay.style.display = isPickingPixel ? 'block' : 'none'
@@ -34,7 +34,7 @@ colorPickerBtn.addEventListener('click', () => {
 ipcRenderer.on('pixel-update', (event, pixel) => {
   const {x, y, rgb} = pixel
 
-  pixelDisplay.textContent = `RGB: ${rgb.r}, ${rgb.g}, ${rgb.b}`
+  pixelDisplay.textContent = `${rgb.r}, ${rgb.g}, ${rgb.b} at (${x}, ${y})`
   pixelDisplay.style.backgroundColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
   pixelDisplay.style.color = (rgb.r + rgb.g + rgb.b) / 3 > 128
     ? 'black'

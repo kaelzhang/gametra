@@ -179,10 +179,13 @@ class ElectronDelegate {
       }
     })
 
-    ipcMain.on('get-pixel', async (event, position) => {
-      log('received "get-pixel" from main window')
+    ipcMain.on('get-pixel', async (event, {x, y, save = false}) => {
+      if (save) {
+        log('received "get-pixel" from main window')
+      }
+
       try {
-        const pixel = await this._getPixel(position.x, position.y)
+        const pixel = await this._getPixel(x, y, save)
         this._controlPanel.webContents.send('pixel-update', pixel)
       } catch (error) {
         console.error('Color picking failed:', error)
@@ -252,7 +255,7 @@ class ElectronDelegate {
     return filepath
   }
 
-  async _getPixel(x, y) {
+  async _getPixel(x, y, save) {
     const image = await this.screenshot(new Viewport(x, y, 1, 1))
     const buffer = image.toBitmap()
     const rgb = {
@@ -267,7 +270,9 @@ class ElectronDelegate {
       rgb
     }
 
-    await this._save(data, 'pixel')
+    if (save) {
+      await this._save(data, 'pixel')
+    }
 
     return data
   }
