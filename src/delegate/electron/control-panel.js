@@ -13,6 +13,8 @@ const toggleCaptureMode = (enable = !isCapturing) => {
   isCapturing = enable
   captureBtn.textContent = isCapturing ? 'Cancel Capture' : 'Capture Region'
 
+  console.log('isCapturing', isCapturing)
+
   if (isCapturing) {
     ipcRenderer.send('start-capture-mode')
   } else {
@@ -53,6 +55,7 @@ ipcRenderer.on('pixel-update', (event, pixel) => {
 })
 
 ipcRenderer.on('capture-complete', (event, data) => {
+  console.log('received capture-complete')
   toggleCaptureMode(false)
 })
 

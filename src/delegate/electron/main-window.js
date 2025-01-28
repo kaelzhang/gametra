@@ -26,8 +26,10 @@ class Element {
   }
 
   hide () {
-    this._element.remove()
-    this._element = UNDEFINED
+    if (this._element) {
+      this._element.remove()
+      this._element = UNDEFINED
+    }
   }
 
   perform (fn) {
@@ -156,7 +158,7 @@ ipcRenderer.on('capture-mode-change', (event, enable) => {
 
 
 const togglePixelPickerMode = enable => {
-  isPickingPixel = enabled
+  isPickingPixel = enable
   // Change cursor to crosshair when in color picker mode
   document.body.style.cursor = enable ? 'crosshair' : 'default'
 }

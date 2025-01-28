@@ -75,7 +75,7 @@ class ElectronDelegate {
       height,
       resizable: false,
       webPreferences: {
-        preload: join(__dirname, 'preload.js'),
+        preload: join(__dirname, 'main-window.js'),
         contextIsolation: true,
         // TODO:
         // We need this to make `require()` work in the preload script,
@@ -179,11 +179,12 @@ class ElectronDelegate {
     ipcMain.on('capture-region', async (event, bounds) => {
       log('received "capture-region" from main window')
       try {
-        const result = await this._captureRegion(bounds)
-        event.reply('capture-complete', result)
-        this._controlPanel.webContents.send('capture-complete', result)
+        const {x, y, width, height} = bounds
+        await this._captureRegion(
+          new Viewport(x, y, width, height)
+        )
       } catch (error) {
-        event.reply('capture-error', error.message)
+        log('Capture error', error.message)
       }
     })
 
@@ -193,9 +194,9 @@ class ElectronDelegate {
       }
 
       try {
-        const pixel = await this._getPixel(x, y, save)
+        await this._getPixel(x, y, save)
       } catch (error) {
-        console.error('Color picking failed:', error)
+        log('Color picking failed:', error)
       }
     })
   }
@@ -238,11 +239,15 @@ class ElectronDelegate {
     const imagePath = await this._save(buffer)
     const jsonPath = await this._save(bounds)
 
-    return {
+    const result = {
       imagePath,
       jsonPath,
       viewport: bounds
     }
+
+    this._controlPanel.webContents.send('capture-complete', result)
+
+    return result
   }
 
   async _save (data, namePrefix = 'capture') {
@@ -277,9 +282,13 @@ class ElectronDelegate {
       rgb
     }
 
+    const {webContents} = this._controlPanel
+
+    webContents.send('pixel-update', pixel)
+
     if (save) {
       await this._save(pixel, 'pixel')
-      this._controlPanel.webContents.send('pixel-pick-complete', pixel)
+      webContents.send('pixel-pick-complete', pixel)
     }
 
     return pixel
