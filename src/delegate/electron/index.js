@@ -1,6 +1,8 @@
 const {join} = require('node:path')
 const fs = require('node:fs/promises')
-const log = require('node:util').debuglog('gametra')
+const {
+  log
+} = require('../../util')
 
 const {
   BrowserWindow,

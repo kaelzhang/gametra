@@ -12,7 +12,7 @@
     "report": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "report:dev": "nyc report --reporter=html && npm run report:open",
     "report:open": "open coverage/index.html",
-    "start": "electron src/games/letsgo/index.js"
+    "start": "NODE_DEBUG=gametra src/games/letsgo/index.js"
   },
   "files": [
     "src/"

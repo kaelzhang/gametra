@@ -1,7 +1,7 @@
 [![Build Status](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml/badge.svg)](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml)
 [![Coverage](https://codecov.io/gh/kaelzhang/gametra/branch/master/graph/badge.svg)](https://codecov.io/gh/kaelzhang/gametra)
 
-# gametra
+# Gametra
 
 A cloud game driver and automator
 
