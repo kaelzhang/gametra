@@ -2,14 +2,57 @@ const {
   ipcRenderer
 } = require('electron')
 
+const {
+  UNDEFINED
+} = require('../../const')
+
+
 let isCapturing = false
 let isPickingColor = false
-let startPos = null
-let selectionElement = null
+let startPos = UNDEFINED
+
+class Element {
+  constructor(creator) {
+    this._element = UNDEFINED
+    this._create = creator
+  }
+
+  show () {
+    if (!this._element) {
+      const creator = this._create
+      this._element = creator()
+      document.body.appendChild(this._element)
+    }
+  }
+
+  hide () {
+    this._element.remove()
+    this._element = UNDEFINED
+  }
+
+  perform (fn) {
+    this.show()
+    fn(this._element)
+  }
+}
+
+
+const selectionOverlay = new Element(() => {
+  const element = document.createElement('div')
+  element.className = 'gametra-region-select-overlay'
+  return element
+})
+
+const selectionMask = new Element(() => {
+  const element = document.createElement('div')
+  element.className = 'gametra-region-select-mask'
+  return element
+})
 
 // Create and inject selection overlay styles
 const style = document.createElement('style')
-style.id = 'gametra-region-select-overlay-style'
+const STYLE_ID = 'gametra-region-select-overlay-style'
+style.id = STYLE_ID
 style.textContent = `
   .gametra-region-select-overlay {
     position: fixed;
@@ -17,6 +60,15 @@ style.textContent = `
     background: rgba(0, 149, 255, 0.1);
     pointer-events: none;
     z-index: 9999;
+  }
+
+  .gametra-region-select-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9998;
   }
 `
 
@@ -27,29 +79,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Helper function to create/update selection overlay
 function updateSelectionOverlay(startX, startY, endX, endY) {
-  if (!selectionElement) {
-    selectionElement = document.createElement('div')
-    selectionElement.className = 'gametra-region-select-overlay'
-    document.body.appendChild(selectionElement)
-  }
-
   const left = Math.min(startX, endX)
   const top = Math.min(startY, endY)
   const width = Math.abs(endX - startX)
   const height = Math.abs(endY - startY)
 
-  selectionElement.style.left = `${left}px`
-  selectionElement.style.top = `${top}px`
-  selectionElement.style.width = `${width}px`
-  selectionElement.style.height = `${height}px`
+  selectionOverlay.perform(element => {
+    element.style.left = `${left}px`
+    element.style.top = `${top}px`
+    element.style.width = `${width}px`
+    element.style.height = `${height}px`
+  })
 }
 
 // Remove selection overlay
 function removeSelectionOverlay() {
-  if (selectionElement) {
-    selectionElement.remove()
-    selectionElement = null
-  }
+  selectionOverlay.hide()
 }
 
 window.addEventListener('mousedown', e => {
@@ -61,6 +106,7 @@ window.addEventListener('mousedown', e => {
 window.addEventListener('mousemove', e => {
   if (isCapturing && startPos) {
     updateSelectionOverlay(startPos.x, startPos.y, e.clientX, e.clientY)
+    selectionMask.show()
   }
   if (isPickingColor) {
     ipcRenderer.send('get-color', { x: e.clientX, y: e.clientY })
@@ -77,8 +123,9 @@ window.addEventListener('mouseup', e => {
     }
 
     ipcRenderer.send('capture-region', bounds)
-    removeSelectionOverlay()
-    startPos = null
+    selectionOverlay.hide()
+    selectionMask.hide()
+    startPos = UNDEFINED
   }
 })
 
@@ -87,8 +134,9 @@ window.addEventListener('mouseup', e => {
 ipcRenderer.on('capture-mode-change', (event, enabled) => {
   isCapturing = enabled
   if (!enabled) {
-    removeSelectionOverlay()
-    startPos = null
+    selectionOverlay.hide()
+    selectionMask.hide()
+    startPos = UNDEFINED
   }
   // Change cursor to crosshair when in capture mode
   document.body.style.cursor = enabled ? 'crosshair' : 'default'

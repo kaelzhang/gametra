@@ -73,13 +73,18 @@ class ElectronDelegate {
       webPreferences: {
         preload: join(__dirname, 'preload.js'),
         contextIsolation: true,
-        nodeIntegration: false
+        // TODO:
+        // We need this to make `require()` work in the preload script,
+        // However, it's a security risk.
+        // We should use a bundler to bundle the preload script instead of
+        //   relying on `require()`.
+        nodeIntegration: true
       }
     })
 
     // open devtools in exeternal window
     mainWindow.webContents.openDevTools({
-      mode: 'external'
+      mode: 'undocked'
     })
 
     this._createControlPanel()
@@ -208,6 +213,8 @@ class ElectronDelegate {
     const timestamp = Date.now()
     const imagePath = join(DOWNLOAD_PATH, `capture_${timestamp}.png`)
     const jsonPath = join(DOWNLOAD_PATH, `capture_${timestamp}.json`)
+
+    log('writing capture image to', DOWNLOAD_PATH, x, y, width, height)
 
     await fs.writeFile(imagePath, buffer)
     await fs.writeFile(jsonPath, JSON.stringify(bounds))
