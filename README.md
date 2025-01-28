@@ -1,20 +1,20 @@
-[![Build Status](https://github.com/kaelzhang/cloud-game-driver/actions/workflows/nodejs.yml/badge.svg)](https://github.com/kaelzhang/cloud-game-driver/actions/workflows/nodejs.yml)
-[![Coverage](https://codecov.io/gh/kaelzhang/cloud-game-driver/branch/master/graph/badge.svg)](https://codecov.io/gh/kaelzhang/cloud-game-driver)
+[![Build Status](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml/badge.svg)](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml)
+[![Coverage](https://codecov.io/gh/kaelzhang/gametra/branch/master/graph/badge.svg)](https://codecov.io/gh/kaelzhang/gametra)
 
-# cloud-game-driver
+# gametra
 
 A cloud game driver and automator
 
 ## Install
 
 ```sh
-$ npm i cloud-game-driver
+$ npm i gametra
 ```
 
 ## Usage
 
 ```js
-const cloud_game_driver = require('cloud-game-driver')
+const cloud_game_driver = require('gametra')
 ```
 
 ## License

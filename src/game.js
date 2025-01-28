@@ -13,8 +13,8 @@ class Game {
     url,
     userAgent = USERAGENT_CHROME,
     // The default ratio of the game window is 16:9
-    width = 1600,
-    height = 900
+    width = 1280,
+    height = 720
   }, delegate) {
     this._url = url
     this._userAgent = userAgent
