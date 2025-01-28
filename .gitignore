@@ -1,5 +1,6 @@
 # Project
-**/downloads/
+**/downloads/*
+!**/downloads/README.md
 
 # Node, Coverage, NPM
 /.nyc_output

@@ -19,8 +19,11 @@ const DOWNLOAD_PATH = join(__dirname, 'downloads')
 
 
 class ElectronDelegate {
-  constructor () {
+  constructor ({
+    debug = false
+  } = {}) {
     this._mainWindow = UNDEFINED
+    this._debug = debug
 
     this._init()
 
@@ -82,10 +85,12 @@ class ElectronDelegate {
       }
     })
 
-    // open devtools in exeternal window
-    mainWindow.webContents.openDevTools({
-      mode: 'undocked'
-    })
+    if (this._debug) {
+      // open devtools in exeternal window
+      mainWindow.webContents.openDevTools({
+        mode: 'undocked'
+      })
+    }
 
     this._createControlPanel()
     this._initIPCHandlers()

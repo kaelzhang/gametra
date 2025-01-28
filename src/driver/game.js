@@ -5,7 +5,7 @@ const {
 } = require('./matcher')
 const {
   USERAGENT_CHROME
-} = require('./const')
+} = require('../const')
 
 
 class Game {
@@ -41,7 +41,13 @@ class Game {
     await this._delegate.click(x, y)
   }
 
-  async screenshot (x, y, width, height) {
+  async screenshot (...args) {
+    if (args.length === 0) {
+      args = [0, 0, this._width, this._height]
+    }
+
+    const [x, y, width, height] = args
+
     return await this._delegate.screenshot(x, y, width, height)
   }
 }
