@@ -1,8 +1,3 @@
-
-
-const {
-  ViewportDescripter
-} = require('./matcher')
 const {
   USERAGENT_CHROME
 } = require('../const')
@@ -24,10 +19,6 @@ class Game {
     this._delegate = delegate
   }
 
-  viewport (...args) {
-    return new ViewportDescripter(this._page, ...args)
-  }
-
   async launch () {
     await this._delegate.launch({
       url: this._url,
@@ -42,13 +33,7 @@ class Game {
   }
 
   async screenshot (...args) {
-    if (args.length === 0) {
-      args = [0, 0, this._width, this._height]
-    }
-
-    const [x, y, width, height] = args
-
-    return await this._delegate.screenshot(x, y, width, height)
+    return await this._delegate.screenshot(...args)
   }
 }
 

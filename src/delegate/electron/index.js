@@ -219,18 +219,18 @@ class ElectronDelegate {
 
   async screenshot (viewport) {
     const mainWindow = this._mainWindow
-    const {webContents} = mainWindow
 
     if (!viewport) {
       viewport = mainWindow.getBounds()
     }
 
-    return webContents.capturePage(viewport)
+    return mainWindow.webContents.capturePage(viewport)
   }
 
   async _captureRegion(viewport) {
     const image = await this.screenshot(viewport)
-    const buffer = image.toPNG()
+    const buffer = image.toBitmap()
+    const imageSize = image.getSize()
 
     const bounds = viewport.object()
 
@@ -242,7 +242,8 @@ class ElectronDelegate {
     const result = {
       imagePath,
       jsonPath,
-      viewport: bounds
+      viewport: bounds,
+      image: imageSize
     }
 
     this._controlPanel.webContents.send('capture-complete', result)
@@ -257,7 +258,7 @@ class ElectronDelegate {
     let content
 
     if (Buffer.isBuffer(data)) {
-      filepath = join(DOWNLOAD_PATH, `${name}.png`)
+      filepath = join(DOWNLOAD_PATH, `${name}.bmp`)
       await fs.writeFile(filepath, data)
     } else {
       filepath = join(DOWNLOAD_PATH, `${name}.json`)
@@ -270,6 +271,8 @@ class ElectronDelegate {
   async _getPixel(x, y, save) {
     const image = await this.screenshot(new Viewport(x, y, 1, 1))
     const buffer = image.toBitmap()
+
+    // The buffer of Electron native image is in BGR format
     const rgb = {
       r: buffer[2],
       g: buffer[1],

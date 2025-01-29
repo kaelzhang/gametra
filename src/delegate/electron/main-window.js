@@ -59,7 +59,6 @@ style.textContent = `
   .gametra-region-select-overlay {
     position: fixed;
     border: 2px solid #0095ff;
-    background: rgba(0, 149, 255, 0.1);
     pointer-events: none;
     z-index: 9999;
   }
@@ -87,8 +86,8 @@ function updateSelectionOverlay(startX, startY, endX, endY) {
   const height = Math.abs(endY - startY)
 
   selectionOverlay.perform(element => {
-    element.style.left = `${left}px`
-    element.style.top = `${top}px`
+    element.style.left = `${left - 2}px`
+    element.style.top = `${top - 2}px`
     element.style.width = `${width}px`
     element.style.height = `${height}px`
   })
@@ -118,6 +117,8 @@ window.addEventListener('mousemove', e => {
 window.addEventListener('mouseup', e => {
   if (isCapturing && startPos) {
     const bounds = {
+      // The current mouse position might be less than the start position
+      // so we need to use the minimum of the two
       x: Math.min(startPos.x, e.clientX),
       y: Math.min(startPos.y, e.clientY),
       width: Math.abs(e.clientX - startPos.x),
@@ -159,6 +160,12 @@ ipcRenderer.on('capture-mode-change', (event, enable) => {
 
 const togglePixelPickerMode = enable => {
   isPickingPixel = enable
+  if (enable) {
+    selectionMask.show()
+  } else {
+    selectionMask.hide()
+  }
+
   // Change cursor to crosshair when in color picker mode
   document.body.style.cursor = enable ? 'crosshair' : 'default'
 }
