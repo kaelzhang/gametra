@@ -2,7 +2,8 @@ const {join} = require('node:path')
 const fs = require('node:fs/promises')
 const {
   log,
-  Viewport
+  Viewport,
+  encodeNativeBMPImage
 } = require('../../util')
 
 const {
@@ -229,21 +230,19 @@ class ElectronDelegate {
 
   async _captureRegion(viewport) {
     const image = await this.screenshot(viewport)
-    const buffer = image.toBitmap()
-    const imageSize = image.getSize()
+    const encoded = encodeNativeBMPImage(image)
 
     const bounds = viewport.object()
 
     log('writing capture image to', DOWNLOAD_PATH, bounds)
 
-    const imagePath = await this._save(buffer)
+    const imagePath = await this._save(encoded.data)
     const jsonPath = await this._save(bounds)
 
     const result = {
       imagePath,
       jsonPath,
-      viewport: bounds,
-      image: imageSize
+      viewport: bounds
     }
 
     this._controlPanel.webContents.send('capture-complete', result)

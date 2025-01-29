@@ -61,27 +61,6 @@ class IntervalMatcher extends Matcher {
 }
 
 
-// Converts Electron's nativeImage bitmap to ImageData-like object for ssim.js
-const convertBitmapToImageData = (bitmapBuffer, width, height) => {
-  // Electron's toBitmap() returns BGRA format
-  // ssim.js expects RGBA, so we need to convert it
-  const rgbaBuffer = Buffer.alloc(bitmapBuffer.length);
-
-  for (let i = 0; i < bitmapBuffer.length; i += 4) {
-    rgbaBuffer[i] = bitmapBuffer[i + 2]     // R
-    rgbaBuffer[i + 1] = bitmapBuffer[i + 1] // G
-    rgbaBuffer[i + 2] = bitmapBuffer[i]     // B
-    rgbaBuffer[i + 3] = bitmapBuffer[i + 3] // A
-  }
-
-  return {
-    data: new Uint8Array(rgbaBuffer),
-    width,
-    height
-  }
-}
-
-
 class ImageMatcher extends IntervalMatcher {
   constructor (
     game,
