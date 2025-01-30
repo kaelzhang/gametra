@@ -1,3 +1,6 @@
+const {Jimp} = require('jimp')
+const {ssim} = require('ssim.js')
+
 const {
   Action,
   IntervalPerformer
@@ -5,7 +8,7 @@ const {
 
 const {
   log
-} = require('../utils')
+} = require('../util')
 
 class ImageMatcher extends Action {
   static Performer = IntervalPerformer
@@ -61,9 +64,9 @@ class ImageMatcher extends Action {
     ])
 
     // Compare the similarity between `viewport` and `this._to`,
-    const similarity = this._compare(viewport.bitmap, this._to.bitmap)
+    const similarity = this._compare(viewport.bitmap, to.bitmap)
 
-    log('similarity', this._viewport.toObject(), similarity)
+    log('similarity', this._viewport.object(), similarity)
 
     return similarity >= this._similarity
   }

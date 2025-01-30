@@ -311,7 +311,9 @@ class ElectronDelegate {
     webContents.send('pixel-update', pixel)
 
     if (save) {
-      await this._save(pixel, 'pixel')
+      await this._increaseBatchId()
+
+      await this._saveJson(pixel, 'pixel')
       webContents.send('pixel-pick-complete', pixel)
     }
 
