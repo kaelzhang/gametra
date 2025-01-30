@@ -1,17 +1,21 @@
-class ImageMatcher extends IntervalMatcher {
+const {
+  Action,
+  IntervalPerformer
+} = require('./action')
+
+class ImageMatcher extends Action {
+  static Performer = IntervalPerformer
+
   constructor (
-    game,
     viewport,
     // The target image buffer to match, could be either
     // - a string path to the image file
     // - a Jimp instance
     to, {
-      checkInterval = 100,
       similarity = 0.9
     } = {}
   ) {
-    super(checkInterval)
-    this._game = game
+    super()
     this._viewport = viewport
     this._to = to
 
@@ -46,9 +50,9 @@ class ImageMatcher extends IntervalMatcher {
     return to
   }
 
-  async _check () {
+  async _perform (game) {
     const [rawViewport, to] = await Promise.all([
-      this._game.screenshot(this._viewport),
+      game.screenshot(this._viewport),
       this._checkTo()
     ])
 
@@ -66,4 +70,8 @@ class ImageMatcher extends IntervalMatcher {
     const {mssim} = ssim(from, to)
     return mssim
   }
+}
+
+module.exports = {
+  ImageMatcher
 }

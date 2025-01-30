@@ -40,9 +40,7 @@ class Game {
     return await this._delegate.screenshot(...args)
   }
 
-  async performMatcher ({
-
-  }) {
+  async perform (action, options) {
 
   }
 }
