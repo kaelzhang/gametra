@@ -2,7 +2,9 @@ const {setTimeout} = require('node:timers/promises')
 const {ssim} = require('ssim.js')
 const bmp = require('bmp-js')
 
-console.log('ssim', ssim)
+const {
+  encodeNativeBMPImage
+} = require('../util')
 
 const UNDEFINED = void 0
 
@@ -79,24 +81,12 @@ class ImageMatcher extends IntervalMatcher {
   }
 
   async _check () {
-    const viewport = await this._game.screenshot(this._viewport)
-    const {width, height} = viewport.getSize()
-
-    const viewportImageData = convertBitmapToImageData(
-      viewport.toBitmap(), width, height
+    const viewport = encodeNativeBMPImage(
+      await this._game.screenshot(this._viewport)
     )
 
-    console.log('this.to', this._to)
-
-    const toDecoded = bmp.decode(this._to)
-    const toImageData = {
-      data: new Uint8Array(toDecoded.data),
-      width: toDecoded.width,
-      height: toDecoded.height
-    }
-
     // Compare the similarity between `viewport` and `this._to`,
-    const similarity = this._compare(viewportImageData, toImageData)
+    const similarity = this._compare(viewport.bitmap, this._to.bitmap)
 
     console.log(similarity, 'similarity')
 

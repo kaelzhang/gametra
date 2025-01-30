@@ -1,5 +1,6 @@
 const {join} = require('node:path')
 const fs = require('node:fs/promises')
+
 const {
   log,
   Viewport,
@@ -47,6 +48,25 @@ class ElectronDelegate {
     this._readyPromise = new Promise((resolve) => {
       this._resolveReady = resolve
     })
+  }
+
+  async _increaseBatchId () {
+    const filepath = join(DOWNLOAD_PATH, '.batch.json')
+
+    let batchId
+
+    try {
+      const content = await fs.readFile(filepath, 'utf-8')
+      batchId = JSON.parse(content.toString()).batchId || 0
+    } catch (error) {
+      batchId = 0
+    }
+
+    batchId ++
+
+    await fs.writeFile(filepath, JSON.stringify({batchId}))
+
+    this._batchId = batchId
   }
 
   async launch ({
@@ -229,15 +249,17 @@ class ElectronDelegate {
   }
 
   async _captureRegion(viewport) {
-    const image = await this.screenshot(viewport)
-    const encoded = encodeNativeBMPImage(image)
-
+    const image = encodeNativeBMPImage(await this.screenshot(viewport))
     const bounds = viewport.object()
 
     log('writing capture image to', DOWNLOAD_PATH, bounds)
 
-    const imagePath = await this._save(encoded.data)
-    const jsonPath = await this._save(bounds)
+    await this._increaseBatchId()
+
+    const jsonPath = await this._saveJson(bounds)
+    const imagePath = this._getCaptureFileName('bmp')
+
+    await image.write(imagePath)
 
     const result = {
       imagePath,
@@ -250,19 +272,14 @@ class ElectronDelegate {
     return result
   }
 
-  async _save (data, namePrefix = 'capture') {
-    const name = `${namePrefix}_${Date.now()}`
+  _getCaptureFileName (ext, namePrefix = 'capture') {
+    return join(DOWNLOAD_PATH, `${namePrefix}_${this._batchId}.${ext}`)
+  }
 
-    let filepath
-    let content
-
-    if (Buffer.isBuffer(data)) {
-      filepath = join(DOWNLOAD_PATH, `${name}.bmp`)
-      await fs.writeFile(filepath, data)
-    } else {
-      filepath = join(DOWNLOAD_PATH, `${name}.json`)
-      await fs.writeFile(filepath, JSON.stringify(data))
-    }
+  // Save a buffer or a JSON object to a file
+  async _saveJson (data, namePrefix = 'capture') {
+    const filepath = this._getCaptureFileName('json', namePrefix)
+    await fs.writeFile(filepath, JSON.stringify(data))
 
     return filepath
   }

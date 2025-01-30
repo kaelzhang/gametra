@@ -1,6 +1,7 @@
 const log = require('node:util').debuglog('gametra')
 
-const bmp = require('bmp-js')
+const {Jimp} = require('jimp')
+
 
 class Viewport {
   constructor(x, y, width, height) {
@@ -21,42 +22,36 @@ class Viewport {
 }
 
 
-// Converts Electron's nativeImage bitmap (BGRA) to ABGR format bmp-js
-// so that it can be properly saved as a BMP file
-const BGRAtoABGR = bitmapBuffer => {
-  const abgrBuffer = Buffer.alloc(bitmapBuffer.length);
+// Converts Electron's nativeImage bitmap (BGRA) to RGBA format
+// which is required by Jimp
+const BGRAtoRGBA = bitmapBuffer => {
+  const rgbaBuffer = Buffer.alloc(bitmapBuffer.length);
 
   for (let i = 0; i < bitmapBuffer.length; i += 4) {
-    abgrBuffer[i] = bitmapBuffer[i + 3]
-    abgrBuffer[i + 1] = bitmapBuffer[i]
-    abgrBuffer[i + 2] = bitmapBuffer[i + 1]
-    abgrBuffer[i + 3] = bitmapBuffer[i + 2]
+    rgbaBuffer[i] = bitmapBuffer[i + 2]
+    rgbaBuffer[i + 1] = bitmapBuffer[i + 1]
+    rgbaBuffer[i + 2] = bitmapBuffer[i]
+    rgbaBuffer[i + 3] = bitmapBuffer[i + 3]
   }
 
-  return abgrBuffer
+  return rgbaBuffer
 }
 
 
-// Encode the BMP buffer got from Electron's nativeImage
-//
-const encodeNativeBMPImage = image => {
-  const rawImageBuffer = image.toBitmap()
+const encodeNativeBMPImage = nativeImage => {
+  const buffer = nativeImage.toBitmap()
   const {
     width,
     height
-  } = image.getSize()
+  } = nativeImage.getSize()
 
-  const encoded = bmp.encode({
-    data: BGRAtoABGR(rawImageBuffer),
+  const image = Jimp.fromBitmap({
+    data: BGRAtoRGBA(buffer),
     width,
     height
   })
 
-  return {
-    data: encoded.data,
-    width,
-    height
-  }
+  return image
 }
 
 

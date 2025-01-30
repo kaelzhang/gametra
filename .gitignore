@@ -1,7 +1,7 @@
 # Project
 **/downloads/*
 !**/downloads/README.md
-**/assets/*
+**/assets/
 
 # Node, Coverage, NPM
 /.nyc_output
@@ -9,7 +9,6 @@
 /coverage.lcov
 /package-lock.json
 /*.tgz
-
 
 # Numerous always-ignore extensions
 *.bak
