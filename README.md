@@ -1,6 +1,8 @@
 [![Build Status](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml/badge.svg)](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml)
 [![Coverage](https://codecov.io/gh/kaelzhang/gametra/branch/master/graph/badge.svg)](https://codecov.io/gh/kaelzhang/gametra)
 
+> Still in development
+
 # Gametra
 
 A cloud game driver and automator
@@ -14,7 +16,20 @@ $ npm i gametra
 ## Usage
 
 ```js
-const cloud_game_driver = require('gametra')
+const {
+  Game,
+  ImageMatcher
+} = require('gametra')
+
+const game = new Game({
+  url: 'https://www.google.com'
+})
+
+await game.launch()
+
+await game.click(100, 100)
+
+await game.screenshot()
 ```
 
 ## License

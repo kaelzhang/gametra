@@ -1,6 +1,5 @@
 {
   "name": "gametra",
-  "private": true,
   "version": "1.0.0",
   "description": "A cloud game driver and automator",
   "scripts": {
