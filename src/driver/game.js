@@ -28,6 +28,10 @@ class Game {
     })
   }
 
+  viewport (...args) {
+    return new Viewport(...args)
+  }
+
   async click (x, y) {
     await this._delegate.click(x, y)
   }
