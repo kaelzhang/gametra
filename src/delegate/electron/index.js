@@ -24,9 +24,11 @@ const DOWNLOAD_PATH = join(__dirname, 'downloads')
 class ElectronDelegate {
   constructor ({
     debug = false
+    downloadPath = DOWNLOAD_PATH
   } = {}) {
     this._mainWindow = UNDEFINED
     this._debug = debug
+    this._downloadPath = downloadPath
 
     this._init()
 
@@ -51,7 +53,7 @@ class ElectronDelegate {
   }
 
   async _increaseBatchId () {
-    const filepath = join(DOWNLOAD_PATH, '.batch.json')
+    const filepath = join(this._downloadPath, '.batch.json')
 
     let batchId
 
@@ -254,7 +256,7 @@ class ElectronDelegate {
     const image = await this.screenshot(viewport)
     const bounds = viewport.object()
 
-    log('writing capture image to', DOWNLOAD_PATH, bounds)
+    log('writing capture image to', this._downloadPath, bounds)
 
     await this._increaseBatchId()
 
@@ -275,7 +277,7 @@ class ElectronDelegate {
   }
 
   _getCaptureFileName (ext, namePrefix = 'capture') {
-    return join(DOWNLOAD_PATH, `${namePrefix}_${this._batchId}.${ext}`)
+    return join(this._downloadPath, `${namePrefix}_${this._batchId}.${ext}`)
   }
 
   // Save a buffer or a JSON object to a file
