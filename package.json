@@ -1,7 +1,8 @@
 {
   "name": "gametra",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A cloud game driver and automator",
+  "main": "src/index.js",
   "scripts": {
     "test": "NODE_DEBUG=gametra nyc ava --timeout=10s --verbose",
     "test:dev": "NODE_DEBUG=gametra nyc ava --timeout=10s --verbose && npm run report:dev",
