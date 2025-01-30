@@ -55,8 +55,17 @@ const encodeNativeBMPImage = nativeImage => {
 }
 
 
+class NotImplementedError extends Error {
+  constructor (message) {
+    super(message)
+    this.name = 'NotImplementedError'
+  }
+}
+
+
 module.exports = {
   log,
   Viewport,
-  encodeNativeBMPImage
+  encodeNativeBMPImage,
+  NotImplementedError
 }

@@ -39,6 +39,12 @@ class Game {
   async screenshot (...args) {
     return await this._delegate.screenshot(...args)
   }
+
+  async performMatcher ({
+
+  }) {
+
+  }
 }
 
 module.exports = {

@@ -1,69 +1,3 @@
-const {setTimeout} = require('node:timers/promises')
-
-const {ssim} = require('ssim.js')
-const {Jimp} = require('jimp')
-
-const {
-  encodeNativeBMPImage
-} = require('../util')
-
-const UNDEFINED = void 0
-
-
-class Matcher {
-  // `match` method should always be called once
-  //   for that it does not provide internal checking mechanism
-  async match () {
-  }
-}
-
-
-class IntervalMatcher extends Matcher {
-  constructor (interval) {
-    super()
-    this._interval = interval
-    this._lastChecked = UNDEFINED
-    this._canceled = false
-  }
-
-  cancel () {
-    this._canceled = true
-  }
-
-  async _wait () {
-    if (this._lastChecked === UNDEFINED) {
-      return
-    }
-
-    const wait = this._interval - (Date.now() - this._lastChecked)
-    if (wait > 0) {
-      await setTimeout(wait)
-    }
-
-    return
-  }
-
-  match () {
-    return new Promise(async (resolve) => {
-      while (true) {
-        if (this._canceled) {
-          return
-        }
-
-        await this._wait()
-
-        const matched = await this._check()
-        this._lastChecked = Date.now()
-
-        if (matched) {
-          return resolve(matched)
-        }
-      }
-    })
-  }
-}
-
-
 class ImageMatcher extends IntervalMatcher {
   constructor (
     game,
@@ -132,8 +66,4 @@ class ImageMatcher extends IntervalMatcher {
     const {mssim} = ssim(from, to)
     return mssim
   }
-}
-
-module.exports = {
-  ImageMatcher
 }
