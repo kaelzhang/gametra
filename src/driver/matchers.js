@@ -3,6 +3,10 @@ const {
   IntervalPerformer
 } = require('./action')
 
+const {
+  log
+} = require('../utils')
+
 class ImageMatcher extends Action {
   static Performer = IntervalPerformer
 
@@ -59,7 +63,7 @@ class ImageMatcher extends Action {
     // Compare the similarity between `viewport` and `this._to`,
     const similarity = this._compare(viewport.bitmap, this._to.bitmap)
 
-    console.log(similarity, 'similarity')
+    log('similarity', this._viewport.toObject(), similarity)
 
     return similarity >= this._similarity
   }
