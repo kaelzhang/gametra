@@ -238,6 +238,7 @@ class ElectronDelegate {
     })
   }
 
+  // Returns a Jimp image
   async screenshot (viewport) {
     const mainWindow = this._mainWindow
 
@@ -245,11 +246,12 @@ class ElectronDelegate {
       viewport = mainWindow.getBounds()
     }
 
-    return mainWindow.webContents.capturePage(viewport)
+    const image = await mainWindow.webContents.capturePage(viewport)
+    return encodeNativeBMPImage(image)
   }
 
   async _captureRegion(viewport) {
-    const image = encodeNativeBMPImage(await this.screenshot(viewport))
+    const image = await this.screenshot(viewport)
     const bounds = viewport.object()
 
     log('writing capture image to', DOWNLOAD_PATH, bounds)
@@ -285,14 +287,17 @@ class ElectronDelegate {
   }
 
   async _getPixel(x, y, save) {
-    const image = await this.screenshot(new Viewport(x, y, 1, 1))
-    const buffer = image.toBitmap()
+    const {
+      bitmap: {
+        data
+      }
+    } = await this.screenshot(new Viewport(x, y, 1, 1))
 
-    // The buffer of Electron native image is in BGR format
+    // The buffer of Jimp is in RGBA format
     const rgb = {
-      r: buffer[2],
-      g: buffer[1],
-      b: buffer[0]
+      r: data[0],
+      g: data[1],
+      b: data[2]
     }
 
     const pixel = {

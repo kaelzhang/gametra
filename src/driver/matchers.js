@@ -51,12 +51,10 @@ class ImageMatcher extends Action {
   }
 
   async _perform (game) {
-    const [rawViewport, to] = await Promise.all([
+    const [viewport, to] = await Promise.all([
       game.screenshot(this._viewport),
       this._checkTo()
     ])
-
-    const viewport = encodeNativeBMPImage(rawViewport)
 
     // Compare the similarity between `viewport` and `this._to`,
     const similarity = this._compare(viewport.bitmap, this._to.bitmap)
