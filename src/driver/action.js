@@ -124,7 +124,7 @@ class Action {
     }
 
     if (this._performer) {
-      throw new RuntimeError(
+      throw new Error(
         `${this.constructor.name}#perform is already running in Performer mode`
       )
     }
