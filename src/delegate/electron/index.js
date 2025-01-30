@@ -18,16 +18,19 @@ const {
   NOOP
 } = require('../../const')
 
-const DOWNLOAD_PATH = join(__dirname, 'downloads')
-
 
 class ElectronDelegate {
   constructor ({
-    debug = false
-    downloadPath = DOWNLOAD_PATH
+    debug = false,
+    downloadPath
   } = {}) {
     this._mainWindow = UNDEFINED
     this._debug = debug
+
+    if (typeof downloadPath !== 'string') {
+      throw new TypeError('downloadPath must be specified')
+    }
+
     this._downloadPath = downloadPath
 
     this._init()
@@ -47,9 +50,9 @@ class ElectronDelegate {
   }
 
   _init () {
-    this._readyPromise = new Promise((resolve) => {
-      this._resolveReady = resolve
-    })
+    const {promise, resolve} = Promise.withResolvers()
+    this._readyPromise = promise
+    this._resolveReady = resolve
   }
 
   async _increaseBatchId () {
@@ -230,13 +233,17 @@ class ElectronDelegate {
     webContents.sendInputEvent({
       type: 'mouseDown',
       x,
-      y
+      y,
+      button: 'left',
+      clickCount: 1
     })
 
     webContents.sendInputEvent({
       type: 'mouseUp',
       x,
-      y
+      y,
+      button: 'left',
+      clickCount: 1
     })
   }
 

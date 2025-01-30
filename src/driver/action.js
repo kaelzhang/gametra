@@ -11,9 +11,9 @@ class IntervalPerformer {
   _lastChecked = UNDEFINED
 
   constructor ({
-    checkInterval = 100
+    interval = 100
   }, perform) {
-    this._interval = checkInterval
+    this._interval = interval
     this._perform = perform
   }
 
@@ -35,9 +35,12 @@ class IntervalPerformer {
   }
 
   async start (args) {
+    this._canceled = false
+
     return new Promise(async (resolve) => {
       while (true) {
         if (this._canceled) {
+          resolve()
           return
         }
 
