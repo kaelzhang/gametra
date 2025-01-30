@@ -59,7 +59,7 @@ class Action {
   _partial = null
   _performer = null
 
-  _getOptions (options = {}) {
+  _getOptions (options) {
     return {
       ...(this.constructor.DEFAULT_OPTIONS || {}),
       ...options
@@ -114,7 +114,7 @@ class Action {
 
   // `match` method should always be called once
   //   for that it does not provide internal checking mechanism
-  async perform (args, options) {
+  async perform (args = [], options = {}) {
     const argList = this._getArgs(args)
 
     const Performer = this.constructor.Performer

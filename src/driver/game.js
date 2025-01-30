@@ -2,6 +2,10 @@ const {
   USERAGENT_CHROME
 } = require('../const')
 
+const {
+  Viewport
+} = require('../util')
+
 
 class Game {
   constructor ({
@@ -41,7 +45,7 @@ class Game {
   }
 
   async perform (action, options) {
-
+    return await action.perform([this], options)
   }
 }
 

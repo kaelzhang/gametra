@@ -11,8 +11,7 @@
     "posttest": "npm run report",
     "report": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
     "report:dev": "nyc report --reporter=html && npm run report:open",
-    "report:open": "open coverage/index.html",
-    "start": "NODE_DEBUG=gametra electron src/games/letsgo/index.js"
+    "report:open": "open coverage/index.html"
   },
   "files": [
     "src/"
