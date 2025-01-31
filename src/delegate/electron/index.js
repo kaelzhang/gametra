@@ -228,13 +228,13 @@ class ElectronDelegate {
   // Mouse Events
   // ------------------------------------------------------------
   // A delegate should implement the very atomic mouse events
-  // - [x] move
-  // - [x] down
-  // - [x] up
+  // - [x] mouseMove
+  // - [x] mouseDown
+  // - [x] mouseUp
   // - [ ] click: could be a combination of move and down,
   //   so won't be implemented here
 
-  async move (x, y) {
+  async mouseMove (x, y) {
     this._mainWindow.webContents.sendInputEvent({
       type: 'mouseMove',
       x,
@@ -245,7 +245,7 @@ class ElectronDelegate {
     this._y = y
   }
 
-  async down ({
+  async mouseDown ({
     button = BUTTON_LEFT,
   } = {}) {
     this._mainWindow.webContents.sendInputEvent({
@@ -256,7 +256,7 @@ class ElectronDelegate {
     })
   }
 
-  async up ({
+  async mouseUp ({
     button = BUTTON_LEFT
   } = {}) {
     this._mainWindow.webContents.sendInputEvent({
