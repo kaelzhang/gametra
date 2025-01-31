@@ -13,6 +13,13 @@ const {
 class ImageMatcher extends Action {
   static Performer = IntervalPerformer
 
+  #viewport
+  #to
+  #toPromise
+  #toResolve
+  #toChecked = false
+  #similarity
+
   constructor (
     viewport,
     // The target image buffer to match, could be either
@@ -23,55 +30,53 @@ class ImageMatcher extends Action {
     } = {}
   ) {
     super()
-    this._viewport = viewport
-    this._to = to
+    this.#viewport = viewport
+    this.#to = to
 
     const {
       promise,
       resolve
     } = Promise.withResolvers()
 
-    this._toPromise = promise
-    this._toResolve = resolve
-    this._toChecked = false
-
-    this._similarity = similarity
+    this.#toPromise = promise
+    this.#toResolve = resolve
+    this.#similarity = similarity
   }
 
-  async _checkTo () {
-    if (this._toChecked) {
-      return this._toPromise
+  async #checkTo () {
+    if (this.#toChecked) {
+      return this.#toPromise
     }
 
-    this._toChecked = true
+    this.#toChecked = true
 
     let to
 
-    if (typeof this._to === 'string') {
-      to = await Jimp.read(this._to)
+    if (typeof this.#to === 'string') {
+      to = await Jimp.read(this.#to)
     } else {
-      to = this._to
+      to = this.#to
     }
 
-    this._toResolve(to)
+    this.#toResolve(to)
     return to
   }
 
   async _perform (game) {
     const [viewport, to] = await Promise.all([
-      game.screenshot(this._viewport),
-      this._checkTo()
+      game.screenshot(this.#viewport),
+      this.#checkTo()
     ])
 
-    // Compare the similarity between `viewport` and `this._to`,
-    const similarity = this._compare(viewport.bitmap, to.bitmap)
+    // Compare the similarity between `viewport` and `this.#to`,
+    const similarity = this.#compare(viewport.bitmap, to.bitmap)
 
-    log('similarity', this._viewport.object(), similarity)
+    log('similarity', this.#viewport.object(), similarity)
 
-    return similarity >= this._similarity
+    return similarity >= this.#similarity
   }
 
-  _compare (from, to) {
+  #compare (from, to) {
     const {mssim} = ssim(from, to)
     return mssim
   }

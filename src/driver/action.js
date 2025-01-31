@@ -7,26 +7,28 @@ const {
 
 
 class IntervalPerformer {
-  _canceled = false
-  _lastChecked = UNDEFINED
+  #canceled = false
+  #lastChecked
+  #interval
+  #perform
 
   constructor ({
     interval = 100
   }, perform) {
-    this._interval = interval
-    this._perform = perform
+    this.#interval = interval
+    this.#perform = perform
   }
 
   cancel () {
-    this._canceled = true
+    this.#canceled = true
   }
 
-  async _wait () {
-    if (this._lastChecked === UNDEFINED) {
+  async #wait () {
+    if (this.#lastChecked === UNDEFINED) {
       return
     }
 
-    const wait = this._interval - (Date.now() - this._lastChecked)
+    const wait = this.#interval - (Date.now() - this.#lastChecked)
     if (wait > 0) {
       await setTimeout(wait)
     }
@@ -35,17 +37,17 @@ class IntervalPerformer {
   }
 
   async start (args) {
-    this._canceled = false
+    this.#canceled = false
 
     while (true) {
-      if (this._canceled) {
+      if (this.#canceled) {
         return
       }
 
-      await this._wait()
+      await this.#wait()
 
-      const matched = await this._perform(...args)
-      this._lastChecked = Date.now()
+      const matched = await this.#perform(...args)
+      this.#lastChecked = Date.now()
 
       if (matched) {
         return matched
@@ -56,10 +58,11 @@ class IntervalPerformer {
 
 
 class Action {
-  _partial = null
-  _performer = null
+  #partial = null
+  #performer = null
+  #cancel
 
-  _getOptions (options) {
+  #getOptions (options) {
     return {
       ...(this.constructor.DEFAULT_OPTIONS || {}),
       ...options
@@ -68,14 +71,14 @@ class Action {
 
   _perform () {
     throw new NotImplementedError(
-      `${this.constructor.name}#_perform is not implemented`
+      `${this.constructor.name}.prototype._perform is not implemented`
     )
   }
 
   async cancel () {
-    if (this._performer) {
-      this._performer.cancel()
-      this._performer = null
+    if (this.#performer) {
+      this.#performer.cancel()
+      this.#performer = null
     }
 
     if (typeof this._cancel === 'function') {
@@ -84,37 +87,35 @@ class Action {
   }
 
   partial (...args) {
-    this._partial = args
+    this.#partial = args
     return this
   }
 
-  _getArgs (args) {
-    this._checkPartial()
+  #getArgs (args) {
+    this.#checkPartial()
 
-    if (!this._partial) {
+    if (!this.#partial) {
       return args
     }
 
-    return [...this._partial, ...args]
+    return [...this.#partial, ...args]
   }
 
-  _checkPartial () {
+  #checkPartial () {
     const {
       REQUIRED_ARGS = 0
     } = this.constructor
 
-    const {length} = this._partial || []
+    const {length} = this.#partial || []
     if (length < REQUIRED_ARGS) {
       throw new RuntimeError(
-        `${this.constructor.name}#perform requires ${REQUIRED_ARGS} arguments to be defined in advance by using .partial()`
+        `${this.constructor.name}.prototype._perform requires ${REQUIRED_ARGS} arguments to be defined in advance by using .partial()`
       )
     }
   }
 
-  // `match` method should always be called once
-  //   for that it does not provide internal checking mechanism
   async perform (args = [], options = {}) {
-    const argList = this._getArgs(args)
+    const argList = this.#getArgs(args)
 
     const Performer = this.constructor.Performer
 
@@ -122,21 +123,21 @@ class Action {
       return this._perform(...argList)
     }
 
-    if (this._performer) {
+    if (this.#performer) {
       throw new Error(
         `${this.constructor.name}#perform is already running in Performer mode`
       )
     }
 
-    const opts = this._getOptions(options)
+    const opts = this.#getOptions(options)
 
-    this._performer = new Performer(
+    this.#performer = new Performer(
       opts,
       this._perform.bind(this)
     )
 
-    const result = await this._performer.start(argList)
-    this._performer = null
+    const result = await this.#performer.start(argList)
+    this.#performer = null
 
     return result
   }

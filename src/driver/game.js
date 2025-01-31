@@ -8,6 +8,14 @@ const {
 
 
 class Game {
+  #url
+  #userAgent
+  #originalWidth
+  #originalHeight
+  #width
+  #height
+  #delegate
+
   constructor ({
     url,
     userAgent = USERAGENT_CHROME,
@@ -15,20 +23,20 @@ class Game {
     width = 1280,
     height = 720
   }, delegate) {
-    this._url = url
-    this._userAgent = userAgent
-    this._originalWidth = this._width = width
-    this._originalHeight = this._height = height
+    this.#url = url
+    this.#userAgent = userAgent
+    this.#originalWidth = this.#width = width
+    this.#originalHeight = this.#height = height
 
-    this._delegate = delegate
+    this.#delegate = delegate
   }
 
   async launch () {
-    await this._delegate.launch({
-      url: this._url,
-      width: this._width,
-      height: this._height,
-      userAgent: this._userAgent
+    await this.#delegate.launch({
+      url: this.#url,
+      width: this.#width,
+      height: this.#height,
+      userAgent: this.#userAgent
     })
   }
 
@@ -55,7 +63,7 @@ const DELEGATE_METHODS = [
 
 DELEGATE_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
-    return this._delegate[method](...args)
+    return this.#delegate[method](...args)
   }
 })
 

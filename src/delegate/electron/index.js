@@ -22,28 +22,37 @@ const {
 
 
 class ElectronDelegate {
+  #mainWindow
+  #controlPanel
+  #debug
+  #downloadPath
+  #readyPromise
+  #resolveReady
+  #batchId
+  #x
+  #y
+
   constructor ({
     debug = false,
     downloadPath
   } = {}) {
-    this._mainWindow = UNDEFINED
-    this._debug = debug
+    this.#debug = debug
 
     if (typeof downloadPath !== 'string') {
       throw new TypeError('downloadPath must be specified')
     }
 
-    this._downloadPath = downloadPath
+    this.#downloadPath = downloadPath
 
-    this._init()
+    this.#init()
 
     app.whenReady().then(() => {
-      this._resolveReady()
-      this._resolveReady = NOOP
+      this.#resolveReady()
+      this.#resolveReady = NOOP
     })
 
     app.on('activate', () => {
-      this._resolveReady()
+      this.#resolveReady()
     })
 
     app.on('window-all-closed', function () {
@@ -51,14 +60,14 @@ class ElectronDelegate {
     })
   }
 
-  _init () {
+  #init () {
     const {promise, resolve} = Promise.withResolvers()
-    this._readyPromise = promise
-    this._resolveReady = resolve
+    this.#readyPromise = promise
+    this.#resolveReady = resolve
   }
 
-  async _increaseBatchId () {
-    const filepath = join(this._downloadPath, '.batch.json')
+  async #increaseBatchId () {
+    const filepath = join(this.#downloadPath, '.batch.json')
 
     let batchId
 
@@ -73,7 +82,7 @@ class ElectronDelegate {
 
     await fs.writeFile(filepath, JSON.stringify({batchId}))
 
-    this._batchId = batchId
+    this.#batchId = batchId
   }
 
   async launch ({
@@ -82,9 +91,9 @@ class ElectronDelegate {
     height,
     userAgent
   }) {
-    await this._readyPromise
+    await this.#readyPromise
 
-    await this._createWindow({
+    await this.#createWindow({
       url,
       width,
       height,
@@ -92,13 +101,13 @@ class ElectronDelegate {
     })
   }
 
-  async _createWindow ({
+  async #createWindow ({
     url,
     width,
     height,
     userAgent
   }) {
-    const mainWindow = this._mainWindow = new BrowserWindow({
+    const mainWindow = this.#mainWindow = new BrowserWindow({
       width,
       height,
       resizable: false,
@@ -114,15 +123,15 @@ class ElectronDelegate {
       }
     })
 
-    if (this._debug) {
+    if (this.#debug) {
       // open devtools in exeternal window
       mainWindow.webContents.openDevTools({
         mode: 'undocked'
       })
     }
 
-    this._createControlPanel()
-    this._initIPCHandlers()
+    this.#createControlPanel()
+    this.#initIPCHandlers()
 
     const {promise, resolve} = Promise.withResolvers()
 
@@ -142,11 +151,11 @@ class ElectronDelegate {
     return promise
   }
 
-  _createControlPanel () {
-    const mainWindow = this._mainWindow
+  #createControlPanel () {
+    const mainWindow = this.#mainWindow
     const bounds = mainWindow.getBounds()
 
-    const controlPanel = this._controlPanel = new BrowserWindow({
+    const controlPanel = this.#controlPanel = new BrowserWindow({
       width: 200,
       height: 400,
       x: bounds.x + bounds.width,
@@ -160,7 +169,7 @@ class ElectronDelegate {
 
     controlPanel.loadFile(join(__dirname, 'control-panel.html'))
 
-    if (this._debug) {
+    if (this.#debug) {
       // open devtools in exeternal window
       controlPanel.webContents.openDevTools({
         mode: 'undocked'
@@ -181,23 +190,23 @@ class ElectronDelegate {
   // - https://www.electronjs.org/docs/latest/api/web-contents#contentssendinputeventinputevent
 
   async mouseMove (x, y) {
-    this._mainWindow.webContents.sendInputEvent({
+    this.#mainWindow.webContents.sendInputEvent({
       type: 'mouseMove',
       x,
       y
     })
 
-    this._x = x
-    this._y = y
+    this.#x = x
+    this.#y = y
   }
 
   async mouseDown ({
     button = BUTTON_LEFT,
   } = {}) {
-    this._mainWindow.webContents.sendInputEvent({
+    this.#mainWindow.webContents.sendInputEvent({
       type: 'mouseDown',
-      x: this._x,
-      y: this._y,
+      x: this.#x,
+      y: this.#y,
       button
     })
   }
@@ -205,10 +214,10 @@ class ElectronDelegate {
   async mouseUp ({
     button = BUTTON_LEFT
   } = {}) {
-    this._mainWindow.webContents.sendInputEvent({
+    this.#mainWindow.webContents.sendInputEvent({
       type: 'mouseUp',
-      x: this._x,
-      y: this._y,
+      x: this.#x,
+      y: this.#y,
       button
     })
   }
@@ -229,7 +238,7 @@ class ElectronDelegate {
       event.deltaY = deltaY
     }
 
-    this._mainWindow.webContents.sendInputEvent(event)
+    this.#mainWindow.webContents.sendInputEvent(event)
   }
 
   // Keyboard Events
@@ -241,14 +250,14 @@ class ElectronDelegate {
   //   so won't be implemented here
 
   async keyDown (keyCode) {
-    this._mainWindow.webContents.sendInputEvent({
+    this.#mainWindow.webContents.sendInputEvent({
       type: 'keyDown',
       keyCode
     })
   }
 
   async keyUp (keyCode) {
-    this._mainWindow.webContents.sendInputEvent({
+    this.#mainWindow.webContents.sendInputEvent({
       type: 'keyUp',
       keyCode
     })
@@ -257,13 +266,13 @@ class ElectronDelegate {
   // Add IPC handlers
   // ------------------------------------------------------------
 
-  _initIPCHandlers () {
+  #initIPCHandlers () {
     // Sent from the control panel
     // ------------------------------------------------------------
     ipcMain.on('start-capture-mode', () => {
       log('received "start-capture-mode" from control panel')
 
-      const {webContents} = this._mainWindow
+      const {webContents} = this.#mainWindow
       webContents.focus()
       webContents.send('pixel-picker-mode-change', false)
       webContents.send('capture-mode-change', true)
@@ -271,13 +280,13 @@ class ElectronDelegate {
 
     ipcMain.on('stop-capture-mode', () => {
       log('received "stop-capture-mode" from control panel')
-      this._mainWindow.webContents.send('capture-mode-change', false)
+      this.#mainWindow.webContents.send('capture-mode-change', false)
     })
 
     ipcMain.on('start-pixel-picker-mode', () => {
       log('received "start-pixel-picker-mode" from control panel')
 
-      const {webContents} = this._mainWindow
+      const {webContents} = this.#mainWindow
       webContents.focus()
       webContents.send('capture-mode-change', false)
       webContents.send('pixel-picker-mode-change', true)
@@ -285,7 +294,7 @@ class ElectronDelegate {
 
     ipcMain.on('stop-pixel-picker-mode', () => {
       log('received "stop-pixel-picker-mode" from control panel')
-      this._mainWindow.webContents.send('pixel-picker-mode-change', false)
+      this.#mainWindow.webContents.send('pixel-picker-mode-change', false)
     })
 
     // Sent from the main window
@@ -294,7 +303,7 @@ class ElectronDelegate {
       log('received "capture-region" from main window')
       try {
         const {x, y, width, height} = bounds
-        await this._captureRegion(
+        await this.#captureRegion(
           new Viewport(x, y, width, height)
         )
       } catch (error) {
@@ -308,7 +317,7 @@ class ElectronDelegate {
       }
 
       try {
-        await this._getPixel(x, y, save)
+        await this.#getPixel(x, y, save)
       } catch (error) {
         log('Color picking failed:', error)
       }
@@ -317,7 +326,7 @@ class ElectronDelegate {
 
   // Returns a Jimp image
   async screenshot (viewport) {
-    const mainWindow = this._mainWindow
+    const mainWindow = this.#mainWindow
 
     if (!viewport) {
       viewport = mainWindow.getBounds()
@@ -327,16 +336,16 @@ class ElectronDelegate {
     return encodeNativeBMPImage(image)
   }
 
-  async _captureRegion(viewport) {
+  async #captureRegion(viewport) {
     const image = await this.screenshot(viewport)
     const bounds = viewport.object()
 
-    log('writing capture image to', this._downloadPath, bounds)
+    log('writing capture image to', this.#downloadPath, bounds)
 
-    await this._increaseBatchId()
+    await this.#increaseBatchId()
 
-    const jsonPath = await this._saveJson(bounds)
-    const imagePath = this._getCaptureFileName('bmp')
+    const jsonPath = await this.#saveJson(bounds)
+    const imagePath = this.#getCaptureFileName('bmp')
 
     await image.write(imagePath)
 
@@ -346,24 +355,24 @@ class ElectronDelegate {
       viewport: bounds
     }
 
-    this._controlPanel.webContents.send('capture-complete', result)
+    this.#controlPanel.webContents.send('capture-complete', result)
 
     return result
   }
 
-  _getCaptureFileName (ext, namePrefix = 'capture') {
-    return join(this._downloadPath, `${namePrefix}_${this._batchId}.${ext}`)
+  #getCaptureFileName (ext, namePrefix = 'capture') {
+    return join(this.#downloadPath, `${namePrefix}_${this.#batchId}.${ext}`)
   }
 
   // Save a buffer or a JSON object to a file
-  async _saveJson (data, namePrefix = 'capture') {
-    const filepath = this._getCaptureFileName('json', namePrefix)
+  async #saveJson (data, namePrefix = 'capture') {
+    const filepath = this.#getCaptureFileName('json', namePrefix)
     await fs.writeFile(filepath, JSON.stringify(data))
 
     return filepath
   }
 
-  async _getPixel(x, y, save) {
+  async #getPixel(x, y, save) {
     const {
       bitmap: {
         data
@@ -383,14 +392,14 @@ class ElectronDelegate {
       rgb
     }
 
-    const {webContents} = this._controlPanel
+    const {webContents} = this.#controlPanel
 
     webContents.send('pixel-update', pixel)
 
     if (save) {
-      await this._increaseBatchId()
+      await this.#increaseBatchId()
 
-      await this._saveJson(pixel, 'pixel')
+      await this.#saveJson(pixel, 'pixel')
       webContents.send('pixel-pick-complete', pixel)
     }
 
