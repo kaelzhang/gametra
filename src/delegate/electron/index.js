@@ -233,6 +233,9 @@ class ElectronDelegate {
   // - [x] mouseUp
   // - [ ] click: could be a combination of move and down,
   //   so won't be implemented here
+  // Ref:
+  // - https://pptr.dev/api/puppeteer.mouse.down
+  // - https://www.electronjs.org/docs/latest/api/web-contents#contentssendinputeventinputevent
 
   async mouseMove (x, y) {
     this._mainWindow.webContents.sendInputEvent({

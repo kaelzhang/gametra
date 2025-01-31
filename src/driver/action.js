@@ -72,15 +72,14 @@ class Action {
     )
   }
 
-  cancel () {
-    if (typeof this._cancel === 'function') {
-      this._cancel()
-      return
-    }
-
+  async cancel () {
     if (this._performer) {
       this._performer.cancel()
       this._performer = null
+    }
+
+    if (typeof this._cancel === 'function') {
+      return this._cancel()
     }
   }
 
