@@ -168,63 +168,6 @@ class ElectronDelegate {
     }
   }
 
-  // Add IPC handlers
-  _initIPCHandlers () {
-    // Sent from the control panel
-    // ------------------------------------------------------------
-    ipcMain.on('start-capture-mode', () => {
-      log('received "start-capture-mode" from control panel')
-
-      const {webContents} = this._mainWindow
-      webContents.focus()
-      webContents.send('capture-mode-change', true)
-    })
-
-    ipcMain.on('stop-capture-mode', () => {
-      log('received "stop-capture-mode" from control panel')
-      this._mainWindow.webContents.send('capture-mode-change', false)
-    })
-
-    ipcMain.on('start-pixel-picker-mode', () => {
-      log('received "start-pixel-picker-mode" from control panel')
-
-      const {webContents} = this._mainWindow
-      webContents.focus()
-      webContents.send('pixel-picker-mode-change', true)
-    })
-
-    ipcMain.on('stop-pixel-picker-mode', () => {
-      log('received "stop-pixel-picker-mode" from control panel')
-      this._mainWindow.webContents.send('pixel-picker-mode-change', false)
-    })
-
-    // Sent from the main window
-    // ------------------------------------------------------------
-    ipcMain.on('capture-region', async (event, bounds) => {
-      log('received "capture-region" from main window')
-      try {
-        const {x, y, width, height} = bounds
-        await this._captureRegion(
-          new Viewport(x, y, width, height)
-        )
-      } catch (error) {
-        log('Capture error', error.message)
-      }
-    })
-
-    ipcMain.on('get-pixel', async (event, {x, y, save = false}) => {
-      if (save) {
-        log('received "get-pixel" from main window')
-      }
-
-      try {
-        await this._getPixel(x, y, save)
-      } catch (error) {
-        log('Color picking failed:', error)
-      }
-    })
-  }
-
   // Mouse Events
   // ------------------------------------------------------------
   // A delegate should implement the very atomic mouse events
@@ -308,6 +251,67 @@ class ElectronDelegate {
     this._mainWindow.webContents.sendInputEvent({
       type: 'keyUp',
       keyCode
+    })
+  }
+
+  // Add IPC handlers
+  // ------------------------------------------------------------
+
+  _initIPCHandlers () {
+    // Sent from the control panel
+    // ------------------------------------------------------------
+    ipcMain.on('start-capture-mode', () => {
+      log('received "start-capture-mode" from control panel')
+
+      const {webContents} = this._mainWindow
+      webContents.focus()
+      webContents.send('pixel-picker-mode-change', false)
+      webContents.send('capture-mode-change', true)
+    })
+
+    ipcMain.on('stop-capture-mode', () => {
+      log('received "stop-capture-mode" from control panel')
+      this._mainWindow.webContents.send('capture-mode-change', false)
+    })
+
+    ipcMain.on('start-pixel-picker-mode', () => {
+      log('received "start-pixel-picker-mode" from control panel')
+
+      const {webContents} = this._mainWindow
+      webContents.focus()
+      webContents.send('capture-mode-change', false)
+      webContents.send('pixel-picker-mode-change', true)
+    })
+
+    ipcMain.on('stop-pixel-picker-mode', () => {
+      log('received "stop-pixel-picker-mode" from control panel')
+      this._mainWindow.webContents.send('pixel-picker-mode-change', false)
+    })
+
+    // Sent from the main window
+    // ------------------------------------------------------------
+    ipcMain.on('capture-region', async (event, bounds) => {
+      log('received "capture-region" from main window')
+      try {
+        const {x, y, width, height} = bounds
+        await this._captureRegion(
+          new Viewport(x, y, width, height)
+        )
+      } catch (error) {
+        log('Capture error', error.message)
+      }
+    })
+
+    ipcMain.on('get-pixel', async (event, {x, y, save = false}) => {
+      if (save) {
+        log('received "get-pixel" from main window')
+      }
+
+      try {
+        await this._getPixel(x, y, save)
+      } catch (error) {
+        log('Color picking failed:', error)
+      }
     })
   }
 

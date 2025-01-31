@@ -98,24 +98,24 @@ function removeSelectionOverlay() {
   selectionOverlay.hide()
 }
 
-window.addEventListener('mousedown', e => {
-  if (isCapturing) {
-    startPos = { x: e.clientX, y: e.clientY }
+window.addEventListener('click', e => {
+  if (!isCapturing && !isPickingPixel) {
+    return
   }
-})
 
-window.addEventListener('mousemove', e => {
-  if (isCapturing && startPos) {
-    updateSelectionOverlay(startPos.x, startPos.y, e.clientX, e.clientY)
-    selectionMask.show()
-  }
   if (isPickingPixel) {
-    ipcRenderer.send('get-pixel', { x: e.clientX, y: e.clientY })
+    ipcRenderer.send('get-pixel', {
+      x: e.clientX,
+      y: e.clientY,
+      save: true
+    })
+    togglePixelPickerMode(false)
+    return
   }
-})
 
-window.addEventListener('mouseup', e => {
-  if (isCapturing && startPos) {
+  // isCapturing is true
+
+  if (startPos) {
     const bounds = {
       // The current mouse position might be less than the start position
       // so we need to use the minimum of the two
@@ -127,15 +127,22 @@ window.addEventListener('mouseup', e => {
 
     ipcRenderer.send('capture-region', bounds)
     toggleCaptureMode(false)
+    return
   }
 
+  startPos = {
+    x: e.clientX,
+    y: e.clientY
+  }
+})
+
+window.addEventListener('mousemove', e => {
+  if (isCapturing && startPos) {
+    updateSelectionOverlay(startPos.x, startPos.y, e.clientX, e.clientY)
+    selectionMask.show()
+  }
   if (isPickingPixel) {
-    ipcRenderer.send('get-pixel', {
-      x: e.clientX,
-      y: e.clientY,
-      save: true
-    })
-    togglePixelPickerMode(false)
+    ipcRenderer.send('get-pixel', { x: e.clientX, y: e.clientY })
   }
 })
 
