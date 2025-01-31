@@ -2,39 +2,39 @@ const {
   ipcRenderer
 } = require('electron')
 
-const {
-  UNDEFINED
-} = require('../../const')
+const UNDEFINED = void 0
 
 
 let isCapturing = false
 let isPickingPixel = false
-let startPos = UNDEFINED
+let startPos
 
 class Element {
+  #element
+  #creator
+
   constructor(creator) {
-    this._element = UNDEFINED
-    this._create = creator
+    this.#creator = creator
   }
 
   show () {
-    if (!this._element) {
-      const creator = this._create
-      this._element = creator()
-      document.body.appendChild(this._element)
+    if (!this.#element) {
+      const creator = this.#creator
+      this.#element = creator()
+      document.body.appendChild(this.#element)
     }
   }
 
   hide () {
-    if (this._element) {
-      this._element.remove()
-      this._element = UNDEFINED
+    if (this.#element) {
+      this.#element.remove()
+      this.#element = UNDEFINED
     }
   }
 
   perform (fn) {
     this.show()
-    fn(this._element)
+    fn(this.#element)
   }
 }
 

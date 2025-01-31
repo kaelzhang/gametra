@@ -114,12 +114,7 @@ class ElectronDelegate {
       webPreferences: {
         preload: join(__dirname, 'main-window.js'),
         contextIsolation: true,
-        // TODO:
-        // We need this to make `require()` work in the preload script,
-        // However, it's a security risk.
-        // We should use a bundler to bundle the preload script instead of
-        //   relying on `require()`.
-        nodeIntegration: true
+        nodeIntegration: false
       }
     })
 
