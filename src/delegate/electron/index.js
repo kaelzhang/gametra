@@ -122,11 +122,7 @@ class ElectronDelegate {
     this._createControlPanel()
     this._initIPCHandlers()
 
-    let resolve
-
-    const promise = new Promise((_resolve) => {
-      resolve = _resolve
-    })
+    const {promise, resolve} = Promise.withResolvers()
 
     const {webContents} = mainWindow
 

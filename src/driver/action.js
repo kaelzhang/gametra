@@ -37,23 +37,20 @@ class IntervalPerformer {
   async start (args) {
     this._canceled = false
 
-    return new Promise(async (resolve) => {
-      while (true) {
-        if (this._canceled) {
-          resolve()
-          return
-        }
-
-        await this._wait()
-
-        const matched = await this._perform(...args)
-        this._lastChecked = Date.now()
-
-        if (matched) {
-          return resolve(matched)
-        }
+    while (true) {
+      if (this._canceled) {
+        return
       }
-    })
+
+      await this._wait()
+
+      const matched = await this._perform(...args)
+      this._lastChecked = Date.now()
+
+      if (matched) {
+        return matched
+      }
+    }
   }
 }
 

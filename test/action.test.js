@@ -64,7 +64,7 @@ test('action with performer', async t => {
   t.true(Date.now() - start > 300)
 })
 
-test('test action cancel: will never resolve', async t => {
+test('test action IntervalPerformer#cancel: will not resolved as true', async t => {
   const start = Date.now()
 
   class TestAction extends Action {
@@ -78,8 +78,8 @@ test('test action cancel: will never resolve', async t => {
   let resolved = false
 
   const action = new TestAction()
-  action.perform().then(() => {
-    resolved = true
+  action.perform().then(result => {
+    resolved = result
   })
 
   setTimeout(200).then(() => {
@@ -88,5 +88,5 @@ test('test action cancel: will never resolve', async t => {
 
   await setTimeout(400)
 
-  t.false(resolved)
+  t.is(resolved, undefined)
 })
