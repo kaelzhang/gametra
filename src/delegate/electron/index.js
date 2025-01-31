@@ -267,7 +267,7 @@ class ElectronDelegate {
     })
   }
 
-  async wheel ({
+  async mouseWheel ({
     deltaX,
     deltaY
   } = {}) {

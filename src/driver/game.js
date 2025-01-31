@@ -36,18 +36,29 @@ class Game {
     return new Viewport(...args)
   }
 
-  async click (x, y) {
-    await this._delegate.click(x, y)
-  }
-
-  async screenshot (...args) {
-    return await this._delegate.screenshot(...args)
-  }
-
   async perform (action, options) {
     return await action.perform([this], options)
   }
 }
+
+
+const DELEGATE_METHODS = [
+  'mouseMove',
+  'mouseDown',
+  'mouseUp',
+  'mouseWheel',
+  'keyDown',
+  'keyUp',
+  'screenshot'
+]
+
+
+DELEGATE_METHODS.forEach(method => {
+  Game.prototype[method] = function (...args) {
+    return this._delegate[method](...args)
+  }
+})
+
 
 module.exports = {
   Game
