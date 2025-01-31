@@ -46,6 +46,12 @@ class IntervalPerformer {
 
       await this.#wait()
 
+      // Check again if the action is canceled
+      // because the action may be canceled in the wait phase
+      if (this.#canceled) {
+        return
+      }
+
       const matched = await this.#perform(...args)
       this.#lastChecked = Date.now()
 
@@ -108,7 +114,7 @@ class Action {
 
     const {length} = this.#partial || []
     if (length < REQUIRED_ARGS) {
-      throw new RuntimeError(
+      throw new Error(
         `${this.constructor.name}.prototype._perform requires ${REQUIRED_ARGS} arguments to be defined in advance by using .partial()`
       )
     }
