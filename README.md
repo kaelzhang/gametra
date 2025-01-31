@@ -7,6 +7,8 @@
 
 A cloud game driver and automator
 
+- Gametra is element-ignostic, it does not care about the element you are interacting with, but only the position of the mouse and the key you are pressing.
+
 ## Install
 
 ```sh

@@ -2,10 +2,13 @@ const USERAGENT_CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 
 const UNDEFINED = void 0
 
+const BUTTON_LEFT = 'left'
+
 function NOOP () {}
 
 module.exports = {
   USERAGENT_CHROME,
   UNDEFINED,
+  BUTTON_LEFT,
   NOOP
 }

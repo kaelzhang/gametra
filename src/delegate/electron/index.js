@@ -1,5 +1,6 @@
 const {join} = require('node:path')
 const fs = require('node:fs/promises')
+const {setTimeout} = require('node:timers/promises')
 
 const {
   log,
@@ -15,7 +16,8 @@ const {
 
 const {
   UNDEFINED,
-  NOOP
+  NOOP,
+  BUTTON_LEFT
 } = require('../../const')
 
 
@@ -223,23 +225,86 @@ class ElectronDelegate {
     })
   }
 
-  async click (x, y) {
-    const {webContents} = this._mainWindow
+  // Mouse Events
+  // ------------------------------------------------------------
+  // A delegate should implement the very atomic mouse events
+  // - [x] move
+  // - [x] down
+  // - [x] up
+  // - [ ] click: could be a combination of move and down,
+  //   so won't be implemented here
 
-    webContents.sendInputEvent({
-      type: 'mouseDown',
+  async move (x, y) {
+    this._mainWindow.webContents.sendInputEvent({
+      type: 'mouseMove',
       x,
-      y,
-      button: 'left',
-      clickCount: 1
+      y
     })
 
-    webContents.sendInputEvent({
+    this._x = x
+    this._y = y
+  }
+
+  async down ({
+    button = BUTTON_LEFT,
+  } = {}) {
+    this._mainWindow.webContents.sendInputEvent({
+      type: 'mouseDown',
+      x: this._x,
+      y: this._y,
+      button
+    })
+  }
+
+  async up ({
+    button = BUTTON_LEFT
+  } = {}) {
+    this._mainWindow.webContents.sendInputEvent({
       type: 'mouseUp',
-      x,
-      y,
-      button: 'left',
-      clickCount: 1
+      x: this._x,
+      y: this._y,
+      button
+    })
+  }
+
+  async wheel ({
+    deltaX,
+    deltaY
+  } = {}) {
+    const event = {
+      type: 'mouseWheel'
+    }
+
+    if (deltaX) {
+      event.deltaX = deltaX
+    }
+
+    if (deltaY) {
+      event.deltaY = deltaY
+    }
+
+    this._mainWindow.webContents.sendInputEvent(event)
+  }
+
+  // Keyboard Events
+  // ------------------------------------------------------------
+  // A delegate should implement the very atomic keyboard events
+  // - [x] keyDown
+  // - [x] keyUp
+  // - [ ] keyPress: could be a combination of keyDown and keyUp,
+  //   so won't be implemented here
+
+  async keyDown (keyCode) {
+    this._mainWindow.webContents.sendInputEvent({
+      type: 'keyDown',
+      keyCode
+    })
+  }
+
+  async keyUp (keyCode) {
+    this._mainWindow.webContents.sendInputEvent({
+      type: 'keyUp',
+      keyCode
     })
   }
 
