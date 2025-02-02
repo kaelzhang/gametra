@@ -6,6 +6,7 @@ const {
 } = require('../util')
 
 
+// A performer that prevents an action from performing too frequently
 class ThrottledPerformer {
   #canceled = false
   #lastChecked
@@ -36,7 +37,55 @@ class ThrottledPerformer {
     return
   }
 
-  async start (args) {
+  async start (...args) {
+    this.#canceled = false
+
+    await this.#wait()
+
+    if (this.#canceled) {
+      return
+    }
+
+    const result = await this.#perform(...args)
+    this.#lastChecked = Date.now()
+
+    return result
+  }
+}
+
+
+// A performer that perform an action regularly
+class IntervalPerformer {
+  #canceled = false
+  #lastChecked
+  #interval
+  #perform
+
+  constructor ({
+    interval = 100
+  }, perform) {
+    this.#interval = interval
+    this.#perform = perform
+  }
+
+  cancel () {
+    this.#canceled = true
+  }
+
+  async #wait () {
+    if (this.#lastChecked === UNDEFINED) {
+      return
+    }
+
+    const wait = this.#interval - (Date.now() - this.#lastChecked)
+    if (wait > 0) {
+      await setTimeout(wait)
+    }
+
+    return
+  }
+
+  async start (...args) {
     this.#canceled = false
 
     while (true) {
@@ -142,7 +191,7 @@ class Action {
       this._perform.bind(this)
     )
 
-    const result = await this.#performer.start(argList)
+    const result = await this.#performer.start(...argList)
     this.#performer = null
 
     return result
@@ -152,5 +201,6 @@ class Action {
 
 module.exports = {
   Action,
-  ThrottledPerformer
+  ThrottledPerformer,
+  IntervalPerformer
 }
