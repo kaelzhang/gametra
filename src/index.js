@@ -3,14 +3,14 @@ const {ElectronDelegate} = require('./delegate/electron')
 const {Viewport} = require('./util')
 const {
   Action,
-  IntervalPerformer
+  ThrottledPerformer
 } = require('./driver/action')
 const {ImageMatcher} = require('./driver/matchers')
 
 module.exports = {
   Game,
   Action,
-  IntervalPerformer,
+  ThrottledPerformer,
   ImageMatcher,
   ElectronDelegate,
   Viewport

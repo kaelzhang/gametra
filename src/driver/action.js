@@ -6,16 +6,16 @@ const {
 } = require('../util')
 
 
-class IntervalPerformer {
+class ThrottledPerformer {
   #canceled = false
   #lastChecked
-  #interval
+  #throttle
   #perform
 
   constructor ({
-    interval = 100
+    throttle = 100
   }, perform) {
-    this.#interval = interval
+    this.#throttle = throttle
     this.#perform = perform
   }
 
@@ -28,7 +28,7 @@ class IntervalPerformer {
       return
     }
 
-    const wait = this.#interval - (Date.now() - this.#lastChecked)
+    const wait = this.#throttle - (Date.now() - this.#lastChecked)
     if (wait > 0) {
       await setTimeout(wait)
     }
@@ -152,5 +152,5 @@ class Action {
 
 module.exports = {
   Action,
-  IntervalPerformer
+  ThrottledPerformer
 }

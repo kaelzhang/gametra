@@ -16,13 +16,12 @@ class Game {
   #height
   #delegate
 
-  constructor ({
-    url,
+  constructor (delegate, url, {
     userAgent = USERAGENT_CHROME,
     // The default ratio of the game window is 16:9
     width = 1280,
     height = 720
-  }, delegate) {
+  } = {}) {
     this.#url = url
     this.#userAgent = userAgent
     this.#originalWidth = this.#width = width
@@ -47,6 +46,10 @@ class Game {
   async perform (action, options) {
     return await action.perform([this], options)
   }
+
+  _performDelegate (method, ...args) {
+    return this.#delegate[method](...args)
+  }
 }
 
 
@@ -63,9 +66,21 @@ const DELEGATE_METHODS = [
 
 DELEGATE_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
-    return this.#delegate[method](...args)
+    return this._performDelegate(method, ...args)
   }
 })
+
+
+const SYNTHESIZED_METHODS = [
+  'mouseMove',
+  'mouseDown',
+  'mouseUp',
+  'mouseWheel',
+  'keyDown',
+  'keyUp'
+]
+
+
 
 
 module.exports = {
