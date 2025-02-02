@@ -6,6 +6,10 @@ const {
   Viewport
 } = require('../util')
 
+const {
+  EventSynthesizer
+} = require('./synthesizer')
+
 
 class Game {
   #url
@@ -28,6 +32,8 @@ class Game {
     this.#originalHeight = this.#height = height
 
     this.#delegate = delegate
+    this.#synthesizer = new EventSynthesizer(delegate)
+    this.#scheduler = new Scheduler(this)
   }
 
   async launch () {
@@ -49,6 +55,10 @@ class Game {
 
   _performDelegate (method, ...args) {
     return this.#delegate[method](...args)
+  }
+
+  _performSynthesized (method, ...args) {
+    return this.#synthesizer[method](...args)
   }
 }
 
@@ -72,15 +82,17 @@ DELEGATE_METHODS.forEach(method => {
 
 
 const SYNTHESIZED_METHODS = [
-  'mouseMove',
-  'mouseDown',
-  'mouseUp',
-  'mouseWheel',
-  'keyDown',
-  'keyUp'
+  'click',
+  'press',
+  'swipe'
 ]
 
 
+SYNTHESIZED_METHODS.forEach(method => {
+  Game.prototype[method] = function (...args) {
+    return this._performSynthesized(method, ...args)
+  }
+})
 
 
 module.exports = {

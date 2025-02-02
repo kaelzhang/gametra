@@ -1,4 +1,5 @@
 const {setTimeout} = require('node:timers/promises')
+const EventEmitter = require('node:events')
 
 const {
   UNDEFINED,
@@ -6,8 +7,41 @@ const {
 } = require('../util')
 
 
+class Pausable extends EventEmitter {
+  #pausePromise
+  #pauseResolve
+
+  get paused () {
+    return !!this.#pausePromise
+  }
+
+  pause () {
+    const {promise, resolve} = Promise.withResolvers()
+
+    this.#pausePromise = promise
+    this.#pauseResolve = resolve
+  }
+
+  resume () {
+    if (this.#pauseResolve) {
+      this.#pauseResolve()
+    }
+
+    this.#pausePromise = UNDEFINED
+    this.#pauseResolve = UNDEFINED
+  }
+
+  // Could be used in the _perform method of a sub class
+  async waitPause () {
+    if (this.#pausePromise) {
+      return this.#pausePromise
+    }
+  }
+}
+
+
 // A performer that prevents an action from performing too frequently
-class ThrottledPerformer {
+class ThrottledPerformer extends Pausable {
   #canceled = false
   #lastChecked
   #throttle
@@ -46,6 +80,8 @@ class ThrottledPerformer {
       return
     }
 
+    await this.waitPause()
+
     const result = await this.#perform(...args)
     this.#lastChecked = Date.now()
 
@@ -55,7 +91,7 @@ class ThrottledPerformer {
 
 
 // A performer that perform an action regularly
-class IntervalPerformer {
+class IntervalPerformer extends Pausable {
   #canceled = false
   #lastChecked
   #interval
@@ -101,6 +137,8 @@ class IntervalPerformer {
         return
       }
 
+      await this.waitPause()
+
       const matched = await this.#perform(...args)
       this.#lastChecked = Date.now()
 
@@ -112,10 +150,11 @@ class IntervalPerformer {
 }
 
 
-class Action {
+class Action extends Pausable {
   #partial = null
   #performer = null
   #cancel
+  #canceled = false
 
   #getOptions (options) {
     return {
@@ -139,6 +178,22 @@ class Action {
     if (typeof this._cancel === 'function') {
       return this._cancel()
     }
+  }
+
+  pause () {
+    if (this.#performer) {
+      this.#performer.pause()
+    }
+
+    super.pause()
+  }
+
+  resume () {
+    if (this.#performer) {
+      this.#performer.resume()
+    }
+
+    super.resume()
   }
 
   partial (...args) {
@@ -170,6 +225,7 @@ class Action {
   }
 
   async perform (args = [], options = {}) {
+    this.#canceled = false
     const argList = this.#getArgs(args)
 
     const Performer = this.constructor.Performer
@@ -200,6 +256,7 @@ class Action {
 
 
 module.exports = {
+  Pausable,
   Action,
   ThrottledPerformer,
   IntervalPerformer

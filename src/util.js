@@ -22,6 +22,14 @@ class Viewport {
 }
 
 
+class Point {
+  constructor (x, y) {
+    this.x = x
+    this.y = y
+  }
+}
+
+
 // Converts Electron's nativeImage bitmap (BGRA) to RGBA format
 // which is required by Jimp
 const BGRAtoRGBA = bitmapBuffer => {
@@ -66,6 +74,7 @@ class NotImplementedError extends Error {
 module.exports = {
   log,
   Viewport,
+  Point,
   encodeNativeBMPImage,
   NotImplementedError
 }
