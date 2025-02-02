@@ -184,6 +184,14 @@ class ElectronDelegate {
   // - https://pptr.dev/api/puppeteer.mouse.down
   // - https://www.electronjs.org/docs/latest/api/web-contents#contentssendinputeventinputevent
 
+  get x () {
+    return this.#x
+  }
+
+  get y () {
+    return this.#y
+  }
+
   async mouseMove (x, y) {
     this.#mainWindow.webContents.sendInputEvent({
       type: 'mouseMove',
