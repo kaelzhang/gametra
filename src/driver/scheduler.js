@@ -47,6 +47,8 @@ class Scheduler extends EventEmitter {
     this.#master = master
 
     if (!master) {
+      // A non-master scheduler is paused by default,
+      // so that it won't start automatically
       this.pause()
     }
 
@@ -63,6 +65,8 @@ class Scheduler extends EventEmitter {
 
   add (action) {
     if (!this.#withinEventHandler) {
+      // The scheduler is a way to manage the lifecycle of a series of jobs,
+      // so we should not add actions outside events
       throw new Error('You should not add actions outside of an event handler')
     }
 
@@ -81,11 +85,14 @@ class Scheduler extends EventEmitter {
   }
 
   // Create a forked branch of the scheduler
-  fork (when) {
-    const scheduler = new Scheduler({
+  fork (
+    when,
+    // Two scheduler should fork into a same scheduler,
+    // otherwise, a new scheduler will be created
+    scheduler = new Scheduler({
       master: false
     })
-
+  ) {
     const whenever = new Whenever(when).then(async () => {
       // Pause the current action
       if (this.#currentAction) {
@@ -103,7 +110,6 @@ class Scheduler extends EventEmitter {
       }
     })
 
-    scheduler.pause()
     return scheduler
   }
 
@@ -162,7 +168,8 @@ class Scheduler extends EventEmitter {
     resolve()
 
     if (!this.#master) {
-      // If it is not the master scheduler, pause it
+      // If it is not the master scheduler,
+      // pause it when the actions are drained
       this.pause()
     }
 

@@ -50,6 +50,8 @@ class ThrottledPerformer extends Pausable {
   constructor ({
     throttle = 100
   }, perform) {
+    super()
+
     this.#throttle = throttle
     this.#perform = perform
   }
@@ -100,6 +102,8 @@ class IntervalPerformer extends Pausable {
   constructor ({
     interval = 100
   }, perform) {
+    super()
+
     this.#interval = interval
     this.#perform = perform
   }
