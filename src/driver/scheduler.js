@@ -5,6 +5,7 @@ const {
 } = require('../const')
 
 class Whenver {
+  #when
   #then
 
   constructor (when) {
@@ -31,7 +32,7 @@ class Whenver {
   }
 }
 
-class Scheduler extends EventEmitter {
+class Scheduler extends Pausable {
   #master
   #actions = []
   #completePromise
@@ -176,4 +177,9 @@ class Scheduler extends EventEmitter {
     this.emit('idle')
     this.#completePromise = UNDEFINED
   }
+}
+
+
+module.exports = {
+  Scheduler
 }
