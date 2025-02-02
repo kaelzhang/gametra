@@ -19,6 +19,7 @@ class Game {
   #width
   #height
   #delegate
+  #synthesizer
 
   constructor (delegate, url, {
     userAgent = USERAGENT_CHROME,
@@ -33,7 +34,7 @@ class Game {
 
     this.#delegate = delegate
     this.#synthesizer = new EventSynthesizer(delegate)
-    this.#scheduler = new Scheduler(this)
+    // this.#scheduler = new Scheduler(this)
   }
 
   async launch () {
