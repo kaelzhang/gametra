@@ -43,7 +43,8 @@ class Pausable extends EventEmitter {
 // A performer that prevents an action from performing too frequently
 class ThrottledPerformer extends Pausable {
   #canceled = false
-  #lastChecked
+  #lastProcessed
+  #throttlePromise
   #throttle
   #perform
 
@@ -65,16 +66,31 @@ class ThrottledPerformer extends Pausable {
   }
 
   async #wait () {
-    if (this.#lastChecked === UNDEFINED) {
+    if (this.#throttlePromise) {
+      // It is an async lock
+      await this.#throttlePromise
+    }
+    // Only if the lock is released or not set, then proceed the real checking
+
+    const wait = this.#lastProcessed === UNDEFINED
+      ? 0
+      : this.#throttle - (Date.now() - this.#lastProcessed)
+
+    if (wait > 0) {
+      const {promise, resolve} = Promise.withResolvers()
+      this.#throttlePromise = promise
+
+      await setTimeout(wait)
+
+      // We should update the last processed time before releasing the lock
+      this.#lastProcessed = Date.now()
+
+      resolve()
+      this.#throttlePromise = UNDEFINED
       return
     }
 
-    const wait = this.#throttle - (Date.now() - this.#lastChecked)
-    if (wait > 0) {
-      await setTimeout(wait)
-    }
-
-    return
+    this.#lastProcessed = Date.now()
   }
 
   async start (...args) {
@@ -88,10 +104,7 @@ class ThrottledPerformer extends Pausable {
 
     await this.waitPause()
 
-    const result = await this.#perform(...args)
-    this.#lastChecked = Date.now()
-
-    return result
+    return this.#perform(...args)
   }
 }
 
@@ -185,6 +198,7 @@ class Action extends Pausable {
 
   #getPerformer () {
     if (this.#performer) {
+      // We should always create one and only one performer for an action
       return this.#performer
     }
 
