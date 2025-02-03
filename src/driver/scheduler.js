@@ -62,6 +62,7 @@ class Scheduler extends Pausable {
   #whenevers = new Set()
   #nonPausedWhenevers = new Set()
   #forked = new Set()
+  #started = false
 
   constructor ({
     master = true
@@ -76,13 +77,17 @@ class Scheduler extends Pausable {
       this.pause()
     }
 
-    this.emit('created')
-    this.emit('idle')
+    // Delay emitting the events, so that the events could be handled via:
+    // const scheduler = new Scheduler().on('idle', callback)
+    setImmediate().then(() => {
+      this.emit('created')
+      this.emit('idle')
+    })
   }
 
-  emit (event, handler) {
+  emit (event) {
     this.#withinEventHandler = true
-    super.emit(event, handler)
+    super.emit(event, this.add.bind(this))
     this.#withinEventHandler = false
     return this
   }
@@ -204,12 +209,18 @@ class Scheduler extends Pausable {
   }
 
   async start (...args) {
-    if (this.#master && this.#args) {
+    if (this.#master && this.#started) {
       throw new Error('The master scheduler should not be started twice')
     }
 
-    this.#args = args
+    this.#started = true
 
+    // Delay executing the start method,
+    // so that the scheduler won't start immediately
+    // before the events are handled
+    await setImmediate()
+
+    this.#args = args
     await this.#start()
   }
 
