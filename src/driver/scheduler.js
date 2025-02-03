@@ -59,10 +59,8 @@ class Scheduler extends Pausable {
   #currentAction
   #args
   #withinEventHandler = false
-  #whenevers = new Set()
-  #nonPausedWhenevers = new Set()
-  #forked = new Set()
   #started = false
+  #emitsOnHold = []
 
   constructor ({
     master = true
@@ -86,10 +84,29 @@ class Scheduler extends Pausable {
   }
 
   emit (event) {
+    if (this.paused) {
+      this.#emitsOnHold.push(event)
+      return
+    }
+
+    this.#emit(event)
+  }
+
+  #emit (event) {
     this.#withinEventHandler = true
     super.emit(event, this.add.bind(this))
     this.#withinEventHandler = false
-    return this
+  }
+
+  resume () {
+    const onHold = [].concat(this.#emitsOnHold)
+    this.#emitsOnHold.length = 0
+
+    for (const event of onHold) {
+      this.#emit(event)
+    }
+
+    super.resume()
   }
 
   add (action) {
@@ -147,39 +164,7 @@ class Scheduler extends Pausable {
       whenever.resume()
     })
 
-    this.#addWhenever(whenever)
-    this.#forked.add(scheduler)
-
     return scheduler
-  }
-
-  #addWhenever (whenever) {
-    this.#whenevers.add(whenever)
-  }
-
-  pauseMonitors () {
-    for (const whenever of this.#whenevers) {
-      if (!whenever.paused) {
-        whenever.pause()
-        this.#nonPausedWhenevers.add(whenever)
-      }
-    }
-
-    for (const forked of this.#forked) {
-      forked.pauseMonitors()
-    }
-  }
-
-  resumeMonitors () {
-    for (const whenever of this.#nonPausedWhenevers) {
-      whenever.resume()
-    }
-
-    this.#nonPausedWhenevers.clear()
-
-    for (const forked of this.#forked) {
-      forked.resumeMonitors()
-    }
   }
 
   // Restart the scheduler,
@@ -202,8 +187,6 @@ class Scheduler extends Pausable {
 
       whenever.resume()
     })
-
-    this.#addWhenever(whenever)
 
     return this
   }
@@ -233,7 +216,7 @@ class Scheduler extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#completePromise = promise
 
-    while (true) {
+    while (this.#started) {
       await this.waitPause()
 
       const action = this.#actions.shift()

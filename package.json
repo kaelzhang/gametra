@@ -39,7 +39,9 @@
     "ava": "^6.2.0",
     "eslint": "^9.18.0",
     "eslint-plugin-import": "^2.31.0",
-    "nyc": "^17.1.0"
+    "nyc": "^17.1.0",
+    "why-is-node-running": "^2.3.0",
+    "wtfnode": "^0.10.0"
   },
   "dependencies": {
     "easing-functions": "^1.2.0",

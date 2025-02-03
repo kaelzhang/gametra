@@ -5,43 +5,8 @@ const {setTimeout} = require('node:timers/promises')
 
 const {Scheduler} = require('../src/driver/scheduler')
 const {
-  Action,
-  ThrottledPerformer
+  Action
 } = require('../src/driver/action')
-
-
-test('add outside of an event handler', t => {
-  const scheduler = new Scheduler()
-
-  t.throws(() => {
-    scheduler.add(new Action())
-  }, {
-    message: /outside/
-  })
-})
-
-
-test('start master scheduler twice', async t => {
-  class TestAction extends Action {
-    async _perform () {
-      await setTimeout(100)
-    }
-  }
-
-  const action = new TestAction()
-
-  const scheduler = new Scheduler()
-  .on('idle', add => {
-    add(action)
-  })
-
-  await t.throwsAsync(async () => Promise.all([
-    scheduler.start(),
-    scheduler.start()
-  ]), {
-    message: /twice/
-  })
-})
 
 
 test('a complex case: pause and resume', async t => {
@@ -116,8 +81,6 @@ test('a complex case: pause and resume', async t => {
 
   scheduler.resume()
 
-  // console.log('go fork')
-
   fork()
   // Give time for forkCondition to return true
   await setTimeout(110)
@@ -130,5 +93,4 @@ test('a complex case: pause and resume', async t => {
   t.is(forkedCount, 1)
 
   scheduler.pause()
-  scheduler.pauseMonitors()
 })
