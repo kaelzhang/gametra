@@ -1,14 +1,21 @@
+const {
+  setImmediate,
+  setTimeout
+} = require('node:timers/promises')
+
 const {Pausable} = require('./action')
 
 const {
   UNDEFINED
 } = require('../const')
 
-class Whenver {
+class Whenever extends Pausable {
   #when
   #then
+  #promise
 
   constructor (when) {
+    super()
     this.#when = when
   }
 
@@ -20,15 +27,21 @@ class Whenver {
 
   async #start () {
     const when = this.#when
-    await when()
-
     const then = this.#then
-    await then()
-  }
 
-  reset () {
-    // Start again
-    this.#start()
+    while (true) {
+      await this.waitPause()
+
+      const yes = await when()
+
+      // Only if the condition is true,
+      // it will go into the then block
+      if (yes) {
+        await then()
+        // Pause the whenever when the condition is true
+        this.pause()
+      }
+    }
   }
 }
 
@@ -39,6 +52,9 @@ class Scheduler extends Pausable {
   #currentAction
   #args
   #withinEventHandler = false
+  #whenevers = new Set()
+  #nonPausedWhenevers = new Set()
+  #forked = new Set()
 
   constructor ({
     master = true
@@ -109,9 +125,43 @@ class Scheduler extends Pausable {
       if (this.#currentAction) {
         this.#currentAction.resume()
       }
+
+      whenever.resume()
     })
 
+    this.#addWhenever(whenever)
+    this.#forked.add(scheduler)
+
     return scheduler
+  }
+
+  #addWhenever (whenever) {
+    this.#whenevers.add(whenever)
+  }
+
+  pauseMonitors () {
+    for (const whenever of this.#whenevers) {
+      if (!whenever.paused) {
+        whenever.pause()
+        this.#nonPausedWhenevers.add(whenever)
+      }
+    }
+
+    for (const forked of this.#forked) {
+      forked.pauseMonitors()
+    }
+  }
+
+  resumeMonitors () {
+    for (const whenever of this.#nonPausedWhenevers) {
+      whenever.resume()
+    }
+
+    this.#nonPausedWhenevers.clear()
+
+    for (const forked of this.#forked) {
+      forked.resumeMonitors()
+    }
   }
 
   // Restart the scheduler,
@@ -131,7 +181,11 @@ class Scheduler extends Pausable {
 
       this.emit('reset')
       this.emit('idle')
+
+      whenever.resume()
     })
+
+    this.#addWhenever(whenever)
 
     return this
   }
@@ -156,7 +210,10 @@ class Scheduler extends Pausable {
     this.#completePromise = promise
 
     while (true) {
+      await this.waitPause()
+
       const action = this.#actions.shift()
+
       if (!action) {
         break
       }
@@ -166,16 +223,17 @@ class Scheduler extends Pausable {
       this.#currentAction = UNDEFINED
     }
 
-    resolve()
-
     if (!this.#master) {
       // If it is not the master scheduler,
       // pause it when the actions are drained
       this.pause()
     }
 
-    this.emit('idle')
+    resolve()
     this.#completePromise = UNDEFINED
+
+    // Event 'idle' must be emitted after `resolve()`
+    this.emit('idle')
   }
 }
 
