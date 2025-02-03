@@ -2,7 +2,7 @@ const {
   setTimeout
 } = require('node:timers/promises')
 
-const {Pausable} = require('./action')
+const {Pausable} = require('../util')
 
 const {
   UNDEFINED

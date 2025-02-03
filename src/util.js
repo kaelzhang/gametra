@@ -1,6 +1,9 @@
+const EventEmitter = require('node:events')
 const log = require('node:util').debuglog('gametra')
 
 const {Jimp} = require('jimp')
+
+const {UNDEFINED} = require('./const')
 
 
 class Viewport {
@@ -71,10 +74,44 @@ class NotImplementedError extends Error {
 }
 
 
+class Pausable extends EventEmitter {
+  #pausePromise
+  #pauseResolve
+
+  get paused () {
+    return !!this.#pausePromise
+  }
+
+  pause () {
+    const {promise, resolve} = Promise.withResolvers()
+
+    this.#pausePromise = promise
+    this.#pauseResolve = resolve
+  }
+
+  resume () {
+    if (this.#pauseResolve) {
+      this.#pauseResolve()
+    }
+
+    this.#pausePromise = UNDEFINED
+    this.#pauseResolve = UNDEFINED
+  }
+
+  // Could be used in the _perform method of a sub class
+  async waitPause () {
+    if (this.#pausePromise) {
+      return this.#pausePromise
+    }
+  }
+}
+
+
 module.exports = {
   log,
   Viewport,
   Point,
+  Pausable,
   encodeNativeBMPImage,
   NotImplementedError
 }

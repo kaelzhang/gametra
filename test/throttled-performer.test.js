@@ -4,9 +4,12 @@ const log = require('util').debuglog('gametra')
 const {setTimeout} = require('node:timers/promises')
 
 const {
-  Action,
-  ThrottledPerformer: OriginalThrottledPerformer
+  Action
 } = require('../src/driver/action')
+
+const {
+  ThrottledPerformer: OriginalThrottledPerformer
+} = require('../src/driver/performers')
 
 
 class ThrottledPerformer extends OriginalThrottledPerformer {
