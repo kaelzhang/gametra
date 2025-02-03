@@ -11,7 +11,7 @@ const {
 class Whenever extends Pausable {
   #when
   #then
-  #promise
+  #args
 
   constructor (when) {
     super()
@@ -20,8 +20,17 @@ class Whenever extends Pausable {
 
   then (then) {
     this.#then = then
-    this.#start()
     return this
+  }
+
+  start (...args) {
+    if (this.#args) {
+      throw new Error('A Whenever should not be started more than once')
+    }
+
+    this.#args = args
+
+    return this.#start()
   }
 
   async #start () {
@@ -31,7 +40,7 @@ class Whenever extends Pausable {
     while (true) {
       await this.waitPause()
 
-      const yes = await when()
+      const yes = await when(...this.#args)
 
       // Only if the condition is true,
       // it will go into the then block
@@ -131,6 +140,14 @@ class Scheduler extends Pausable {
 
   #addWhenever (whenever) {
     this.#whenevers.add(whenever)
+
+    if (this.paused) {
+      whenever.pause()
+    }
+
+    if (this.#started) {
+      whenever.start(...this.#args)
+    }
   }
 
   #pauseMonitors () {
@@ -142,6 +159,12 @@ class Scheduler extends Pausable {
   #resumeMonitors () {
     for (const whenever of this.#whenevers) {
       whenever.resume()
+    }
+  }
+
+  #startMonitors () {
+    for (const whenever of this.#whenevers) {
+      whenever.start(...this.#args)
     }
   }
 
@@ -221,9 +244,10 @@ class Scheduler extends Pausable {
       // Initialize the events only once
       this.#initEvents()
       this.#started = true
+      this.#args = args
+      this.#startMonitors()
     }
 
-    this.#args = args
     await this.#start()
   }
 

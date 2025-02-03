@@ -75,7 +75,8 @@ class ThrottledPerformer extends Pausable {
 }
 
 
-// A performer that perform an action regularly
+// A performer that perform an action regularly,
+// until the action returns a truthy value
 class IntervalPerformer extends Pausable {
   #canceled = false
   #lastChecked

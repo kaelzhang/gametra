@@ -26,6 +26,8 @@ test('whenever', async t => {
     count ++
   })
 
+  whenever.start()
+
   await setTimeout(100)
 
   t.is(count, 0)
