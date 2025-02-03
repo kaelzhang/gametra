@@ -109,12 +109,16 @@ test('scheduler reset', async t => {
   const action = new TestAction()
 
   let shouldReset = false
+  let reset = false
 
   const scheduler = new Scheduler({
     master: false
   })
   .on('idle', add => {
     add(action)
+  })
+  .on('reset', () => {
+    reset = true
   })
   .reset(async () => {
     const reset = shouldReset
@@ -124,8 +128,22 @@ test('scheduler reset', async t => {
   })
 
   scheduler.start()
+
+  // Sub scheduler is paused by default, so we need to resume it
   scheduler.resume()
   await scheduler.complete()
   t.is(count, 1)
+
+  shouldReset = true
+  scheduler.start()
+  scheduler.resume()
+  await setTimeout(150)
+
+  // After reset, the scheduler should be paused,
+  // so we need to resume it
+  scheduler.resume()
+  t.is(reset, true)
+
+  scheduler.pause()
 })
 
