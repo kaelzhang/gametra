@@ -37,6 +37,13 @@ class Whenever extends Pausable {
       // Only if the condition is true,
       // it will go into the then block
       if (yes) {
+        if (this.paused) {
+          // If already paused, we should skip the processing of `then`,
+          // and wait for the scheduler to resume, and restart checking again,
+          // because the checking result might be out-dated
+          continue
+        }
+
         await then()
         // Pause the whenever when the condition is true
         this.pause()
@@ -116,11 +123,17 @@ class Scheduler extends Pausable {
         this.#currentAction.pause()
       }
 
+      // Pause the parent scheduler
+      this.pause()
+
       this.emit('fork')
 
-      // Resume the sub scheduler
+      // Resume the sub scheduler and start it
       scheduler.resume()
       await scheduler.start(...this.#args)
+
+      // Resume the parent scheduler
+      this.resume()
 
       if (this.#currentAction) {
         this.#currentAction.resume()
@@ -239,5 +252,6 @@ class Scheduler extends Pausable {
 
 
 module.exports = {
+  Whenever,
   Scheduler
 }
