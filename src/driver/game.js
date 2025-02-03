@@ -50,8 +50,8 @@ class Game {
     return new Viewport(...args)
   }
 
-  async perform (action, options) {
-    return await action.perform([this], options)
+  async perform (action) {
+    return await action.perform(this)
   }
 
   _performDelegate (method, ...args) {

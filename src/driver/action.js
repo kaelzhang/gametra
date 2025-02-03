@@ -193,6 +193,7 @@ class IntervalPerformer extends Pausable {
 class Action extends Pausable {
   #partial = null
   #performer = null
+  #performerOptions
   #cancel
   #canceled = false
 
@@ -208,8 +209,12 @@ class Action extends Pausable {
     }
 
     const options = {
+      // Performer class options
+      ...(Performer.DEFAULT_OPTIONS || {}),
+      // Class options
       ...(this.constructor.performerOptions || {}),
-      ...(Performer.DEFAULT_OPTIONS || {})
+      // Instance options
+      ...(this.#performerOptions || {})
     }
 
     this.#performer = new Performer(options, this._perform.bind(this))
@@ -251,6 +256,11 @@ class Action extends Pausable {
 
   partial (...args) {
     this.#partial = args
+    return this
+  }
+
+  options (options) {
+    this.#performerOptions = options
     return this
   }
 
