@@ -18,23 +18,6 @@ test('not implemented', t => {
 })
 
 
-test('performer already running', async t => {
-  class TestAction extends Action {
-    static Performer = IntervalPerformer
-
-    async _perform () {
-      return 1
-    }
-  }
-
-  const action = new TestAction()
-  action.perform()
-  await t.throwsAsync(() => action.perform(), {
-    message: /already running/
-  })
-})
-
-
 test('basic action', async t => {
   class TestAction extends Action {
     async _perform (foo) {
@@ -47,78 +30,6 @@ test('basic action', async t => {
 
   t.is(result, 3)
 })
-
-test('action with performer', async t => {
-  const start = Date.now()
-
-  class TestAction extends Action {
-    static Performer = IntervalPerformer
-
-    async _perform () {
-      return Date.now() - start > 300
-    }
-  }
-
-  const action = new TestAction()
-  const result = await action.perform()
-
-  t.true(Date.now() - start > 300)
-})
-
-test('test action IntervalPerformer#cancel: will not resolved as true', async t => {
-  const start = Date.now()
-
-  class TestAction extends Action {
-    static Performer = IntervalPerformer
-
-    async _perform () {
-      return Date.now() - start > 300
-    }
-  }
-
-  let resolved = false
-
-  const action = new TestAction()
-  action.perform().then(result => {
-    resolved = result
-  })
-
-  setTimeout(200).then(() => {
-    action.cancel()
-  })
-
-  await setTimeout(400)
-
-  t.is(resolved, undefined)
-})
-
-
-test('action cancel in before waitphase', async t => {
-  const start = Date.now()
-
-  class TestAction extends Action {
-    static Performer = IntervalPerformer
-
-    async _perform () {
-      await setTimeout(200)
-      return Date.now() - start > 300
-    }
-  }
-
-
-  let resolved = false
-
-  const action = new TestAction()
-  action.perform().then(result => {
-    resolved = result
-  })
-  await setTimeout(1)
-  action.cancel()
-  await setTimeout(400)
-
-  t.is(resolved, undefined)
-})
-
 
 test('partial', async t => {
   class TestAction extends Action {
@@ -171,20 +82,35 @@ test('_cancel', async t => {
   t.is(resolved, 3)
 })
 
-test('throttled performer', async t => {
-
-
+test('action pause', async t => {
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
-
     async _perform () {
+      await setTimeout(100)
+      await this.waitPause()
       return 1
     }
   }
 
+  const start = Date.now()
+  let resolved
+  let timeCost
+
   const action = new TestAction()
-  const result = await action.perform()
+  action.perform().then(result => {
+    resolved = result
+    timeCost = Date.now() - start
+  })
 
-  t.is(result, 1)
+  action.pause()
+  t.true(action.paused)
+
+  await setTimeout(100)
+  t.is(resolved, undefined)
+
+  await setTimeout(100)
+  action.resume()
+
+  await setTimeout(100)
+  t.is(resolved, 1)
+  t.true(timeCost >= 200)
 })
-
