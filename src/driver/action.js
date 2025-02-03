@@ -47,8 +47,12 @@ class ThrottledPerformer extends Pausable {
   #throttle
   #perform
 
+  static DEFAULT_OPTIONS = {
+    throttle: 100
+  }
+
   constructor ({
-    throttle = 100
+    throttle
   }, perform) {
     super()
 
@@ -98,9 +102,14 @@ class IntervalPerformer extends Pausable {
   #lastChecked
   #interval
   #perform
+  #running = false
+
+  static DEFAULT_OPTIONS = {
+    interval: 100
+  }
 
   constructor ({
-    interval = 100
+    interval
   }, perform) {
     super()
 
@@ -126,6 +135,20 @@ class IntervalPerformer extends Pausable {
   }
 
   async start (...args) {
+    if (this.#running) {
+      // IntervalPerformer is not allowed to be started twice
+      throw new Error(
+        `${this.constructor.name} is already running`
+      )
+    }
+
+    this.#running = true
+    const result = await this.#start(...args)
+    this.#running = false
+    return result
+  }
+
+  async #start (...args) {
     this.#canceled = false
 
     while (true) {
@@ -160,11 +183,23 @@ class Action extends Pausable {
   #cancel
   #canceled = false
 
-  #getOptions (options) {
-    return {
-      ...(this.constructor.DEFAULT_OPTIONS || {}),
-      ...options
+  #getPerformer () {
+    if (this.#performer) {
+      return this.#performer
     }
+
+    const Performer = this.constructor.Performer
+    if (!Performer) {
+      return
+    }
+
+    const options = {
+      ...(this.constructor.performerOptions || {}),
+      ...(Performer.DEFAULT_OPTIONS || {})
+    }
+
+    this.#performer = new Performer(options, this._perform.bind(this))
+    return this.#performer
   }
 
   _perform () {
@@ -228,33 +263,17 @@ class Action extends Pausable {
     }
   }
 
-  async perform (args = [], options = {}) {
+  async perform (...args) {
     this.#canceled = false
     const argList = this.#getArgs(args)
 
-    const Performer = this.constructor.Performer
+    const performer = this.#getPerformer()
 
-    if (!Performer) {
+    if (!performer) {
       return this._perform(...argList)
     }
 
-    if (this.#performer) {
-      throw new Error(
-        `${this.constructor.name}#perform is already running in Performer mode`
-      )
-    }
-
-    const opts = this.#getOptions(options)
-
-    this.#performer = new Performer(
-      opts,
-      this._perform.bind(this)
-    )
-
-    const result = await this.#performer.start(...argList)
-    this.#performer = null
-
-    return result
+    return this.#performer.start(...argList)
   }
 }
 

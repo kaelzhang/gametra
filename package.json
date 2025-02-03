@@ -44,6 +44,7 @@
     "nyc": "^17.1.0"
   },
   "dependencies": {
+    "easing-functions": "^1.2.0",
     "electron": "^34.0.1",
     "jimp": "^1.6.0",
     "puppeteer": "^22.0.0",

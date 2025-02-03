@@ -2,7 +2,7 @@ const {
   setTimeout
 } = require('node:timers/promises')
 
-// const Easing = require('easing-functions')
+const Easing = require('easing-functions')
 
 const BUTTON_LEFT = 'left'
 
@@ -30,9 +30,9 @@ class EventSynthesizer {
     this.#mouseMoveSpeed = mouseMoveSpeed
     this.#mouseEventInterval = mouseEventInterval
 
-    // this.#easing = typeof easing === 'function'
-    //   ? easing
-    //   : Easing[easing]
+    this.#easing = typeof easing === 'function'
+      ? easing
+      : Easing[easing]
   }
 
   // Imitate the real mouse move of human

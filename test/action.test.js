@@ -5,7 +5,8 @@ const {setTimeout} = require('node:timers/promises')
 
 const {
   Action,
-  IntervalPerformer
+  IntervalPerformer,
+  ThrottledPerformer
 } = require('../src/driver/action')
 
 
@@ -42,7 +43,7 @@ test('basic action', async t => {
   }
 
   const action = new TestAction()
-  const result = await action.perform([2])
+  const result = await action.perform(2)
 
   t.is(result, 3)
 })
@@ -169,3 +170,21 @@ test('_cancel', async t => {
   await setTimeout(100)
   t.is(resolved, 3)
 })
+
+test('throttled performer', async t => {
+
+
+  class TestAction extends Action {
+    static Performer = ThrottledPerformer
+
+    async _perform () {
+      return 1
+    }
+  }
+
+  const action = new TestAction()
+  const result = await action.perform()
+
+  t.is(result, 1)
+})
+
