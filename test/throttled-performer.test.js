@@ -53,6 +53,8 @@ test('throttled action performing', async t => {
 
   let passed = true
 
+  log('performTimes', performTimes.map(t => t - start))
+
   performTimes.reduce((prev, current) => {
     if (current - prev < 200) {
       passed = false
