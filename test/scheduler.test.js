@@ -94,3 +94,38 @@ test('a complex case: pause and resume', async t => {
 
   scheduler.pause()
 })
+
+
+test('scheduler reset', async t => {
+  let count = 0
+
+  class TestAction extends Action {
+    async _perform () {
+      count ++
+      await setTimeout(200)
+    }
+  }
+
+  const action = new TestAction()
+
+  let shouldReset = false
+
+  const scheduler = new Scheduler({
+    master: false
+  })
+  .on('idle', add => {
+    add(action)
+  })
+  .reset(async () => {
+    const reset = shouldReset
+    shouldReset = false
+    await setTimeout(100)
+    return reset
+  })
+
+  scheduler.start()
+  scheduler.resume()
+  await scheduler.complete()
+  t.is(count, 1)
+})
+

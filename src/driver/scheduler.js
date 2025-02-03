@@ -1,5 +1,4 @@
 const {
-  setImmediate,
   setTimeout
 } = require('node:timers/promises')
 
@@ -61,6 +60,7 @@ class Scheduler extends Pausable {
   #withinEventHandler = false
   #started = false
   #emitsOnHold = []
+  #whenevers = new Set()
 
   constructor ({
     master = true
@@ -74,13 +74,11 @@ class Scheduler extends Pausable {
       // so that it won't start automatically
       this.pause()
     }
+  }
 
-    // Delay emitting the events, so that the events could be handled via:
-    // const scheduler = new Scheduler().on('idle', callback)
-    setImmediate().then(() => {
-      this.emit('created')
-      this.emit('idle')
-    })
+  #initEvents () {
+    this.emit('created')
+    this.emit('idle')
   }
 
   emit (event) {
@@ -98,6 +96,11 @@ class Scheduler extends Pausable {
     this.#withinEventHandler = false
   }
 
+  pause () {
+    this.#pauseMonitors()
+    super.pause()
+  }
+
   resume () {
     const onHold = [].concat(this.#emitsOnHold)
     this.#emitsOnHold.length = 0
@@ -107,6 +110,7 @@ class Scheduler extends Pausable {
     }
 
     super.resume()
+    this.#resumeMonitors()
   }
 
   add (action) {
@@ -125,9 +129,20 @@ class Scheduler extends Pausable {
     }
   }
 
-  // Resolves when the scheduler completes all actions
-  async complete () {
-    return this.#completePromise
+  #addWhenever (whenever) {
+    this.#whenevers.add(whenever)
+  }
+
+  #pauseMonitors () {
+    for (const whenever of this.#whenevers) {
+      whenever.pause()
+    }
+  }
+
+  #resumeMonitors () {
+    for (const whenever of this.#whenevers) {
+      whenever.resume()
+    }
   }
 
   // Create a forked branch of the scheduler
@@ -164,6 +179,8 @@ class Scheduler extends Pausable {
       whenever.resume()
     })
 
+    this.#addWhenever(whenever)
+
     return scheduler
   }
 
@@ -188,20 +205,23 @@ class Scheduler extends Pausable {
       whenever.resume()
     })
 
+    this.#addWhenever(whenever)
+
     return this
   }
 
   async start (...args) {
     if (this.#master && this.#started) {
-      throw new Error('The master scheduler should not be started twice')
+      throw new Error(
+        'The master scheduler should not be started more than once'
+      )
     }
 
-    this.#started = true
-
-    // Delay executing the start method,
-    // so that the scheduler won't start immediately
-    // before the events are handled
-    await setImmediate()
+    if (!this.#started) {
+      // Initialize the events only once
+      this.#initEvents()
+      this.#started = true
+    }
 
     this.#args = args
     await this.#start()
@@ -241,6 +261,11 @@ class Scheduler extends Pausable {
 
     // Event 'idle' must be emitted after `resolve()`
     this.emit('idle')
+  }
+
+  // Resolves when the scheduler completes all actions
+  async complete () {
+    return this.#completePromise
   }
 }
 

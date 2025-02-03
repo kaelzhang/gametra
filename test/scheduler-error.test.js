@@ -27,6 +27,6 @@ test('start master scheduler twice', async t => {
     scheduler.start(),
     scheduler.start()
   ]), {
-    message: /twice/
+    message: /more than once/
   })
 })
