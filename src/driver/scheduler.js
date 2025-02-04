@@ -62,6 +62,37 @@ class Whenever extends Pausable {
 }
 
 
+class ActionGroup {
+  #actions
+
+  constructor (actions) {
+    this.#actions = actions
+  }
+
+  cancel () {
+    this.#apply('cancel')
+  }
+
+  pause () {
+    this.#apply('pause')
+  }
+
+  resume () {
+    this.#apply('resume')
+  }
+
+  #apply (method) {
+    for (const action of this.#actions) {
+      action[method]()
+    }
+  }
+
+  perform (...args) {
+    return Promise.all(this.#actions.map(action => action.perform(...args)))
+  }
+}
+
+
 const makeWhen = when => when instanceof Action
   ? (...args) => when.perform(...args)
   : when
@@ -71,7 +102,7 @@ class Scheduler extends Pausable {
   #master
   #actions = []
   #completePromise
-  #currentAction
+  #currentActions
   #args
   #withinEventHandler = false
   #started = false
@@ -129,14 +160,14 @@ class Scheduler extends Pausable {
     this.#resumeMonitors()
   }
 
-  add (action) {
+  add (...actions) {
     if (!this.#withinEventHandler) {
       // The scheduler is a way to manage the lifecycle of a series of jobs,
       // so we should not add actions outside events
       throw new Error('You should not add actions outside of an event handler')
     }
 
-    this.#actions.push(action)
+    this.#actions.push(new ActionGroup(actions))
 
     // Already initialized
     if (this.#master && this.#args) {
@@ -190,8 +221,8 @@ class Scheduler extends Pausable {
   ) {
     const whenever = new Whenever(when).then(async () => {
       // Pause the current action
-      if (this.#currentAction) {
-        this.#currentAction.pause()
+      if (this.#currentActions) {
+        this.#currentActions.pause()
       }
 
       // Pause the parent scheduler
@@ -209,8 +240,8 @@ class Scheduler extends Pausable {
       // Resume the parent scheduler
       this.resume()
 
-      if (this.#currentAction) {
-        this.#currentAction.resume()
+      if (this.#currentActions) {
+        this.#currentActions.resume()
       }
 
       whenever.resume()
@@ -231,9 +262,9 @@ class Scheduler extends Pausable {
     const whenever = new Whenever(when).then(() => {
       this.#actions.length = 0
 
-      if (this.#currentAction) {
-        this.#currentAction.cancel()
-        this.#currentAction = UNDEFINED
+      if (this.#currentActions) {
+        this.#currentActions.cancel()
+        this.#currentActions = UNDEFINED
       }
 
       if (!this.#master) {
@@ -281,15 +312,15 @@ class Scheduler extends Pausable {
     while (this.#started) {
       await this.waitPause()
 
-      const action = this.#actions.shift()
+      const actions = this.#actions.shift()
 
-      if (!action) {
+      if (!actions) {
         break
       }
 
-      this.#currentAction = action
-      await action.perform(...this.#args)
-      this.#currentAction = UNDEFINED
+      this.#currentActions = actions
+      await actions.perform(...this.#args)
+      this.#currentActions = UNDEFINED
     }
 
     if (!this.#master) {
