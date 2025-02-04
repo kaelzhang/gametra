@@ -143,6 +143,12 @@ class Scheduler extends Pausable {
 
   pause () {
     this.#pauseMonitors()
+
+    // Pause the current action
+    if (this.#currentActions) {
+      this.#currentActions.pause()
+    }
+
     super.pause()
   }
 
@@ -155,6 +161,11 @@ class Scheduler extends Pausable {
     }
 
     super.resume()
+
+    if (this.#currentActions) {
+      this.#currentActions.resume()
+    }
+
     this.#resumeMonitors()
   }
 
@@ -218,11 +229,6 @@ class Scheduler extends Pausable {
     })
   ) {
     const whenever = new Whenever(when).then(async () => {
-      // Pause the current action
-      if (this.#currentActions) {
-        this.#currentActions.pause()
-      }
-
       // Pause the parent scheduler,
       // which will also pause the whenever
       this.pause()
@@ -238,10 +244,6 @@ class Scheduler extends Pausable {
 
       // Resume the parent scheduler
       this.resume()
-
-      if (this.#currentActions) {
-        this.#currentActions.resume()
-      }
 
       whenever.resume()
     })
