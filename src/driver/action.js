@@ -8,35 +8,12 @@ const {
 
 
 class Action extends Pausable {
-  #partial = null
-  #performer = null
+  #partial
+  #performers
+  #perform
   #performerOptions
   #cancel
   #canceled = false
-
-  #getPerformer () {
-    if (this.#performer) {
-      // We should always create one and only one performer for an action
-      return this.#performer
-    }
-
-    const Performer = this.constructor.Performer
-    if (!Performer) {
-      return
-    }
-
-    const options = {
-      // Performer class options
-      ...(Performer.DEFAULT_OPTIONS || {}),
-      // Class options
-      ...(this.constructor.performerOptions || {}),
-      // Instance options
-      ...(this.#performerOptions || {})
-    }
-
-    this.#performer = new Performer(options, this._perform.bind(this))
-    return this.#performer
-  }
 
   _perform () {
     throw new NotImplementedError(
@@ -45,9 +22,11 @@ class Action extends Pausable {
   }
 
   async cancel () {
-    if (this.#performer) {
-      this.#performer.cancel()
-      this.#performer = null
+    if (this.#performers) {
+      for (const performer of this.#performers) {
+        performer.cancel()
+      }
+      this.#performers = UNDEFINED
     }
 
     if (typeof this._cancel === 'function') {
@@ -56,16 +35,20 @@ class Action extends Pausable {
   }
 
   pause () {
-    if (this.#performer) {
-      this.#performer.pause()
+    if (this.#performers) {
+      for (const performer of this.#performers) {
+        performer.pause()
+      }
     }
 
     super.pause()
   }
 
   resume () {
-    if (this.#performer) {
-      this.#performer.resume()
+    if (this.#performers) {
+      for (const performer of this.#performers) {
+        performer.resume()
+      }
     }
 
     super.resume()
@@ -108,13 +91,51 @@ class Action extends Pausable {
     this.#canceled = false
     const argList = this.#getArgs(args)
 
-    const performer = this.#getPerformer()
+    return this.#initPerformers()
+    ? this.#perform(...argList)
+    : this._perform(...argList)
+  }
 
-    if (!performer) {
-      return this._perform(...argList)
+  // Returns true if there are performers
+  #initPerformers () {
+    if (this.#performers) {
+      // There are performers which have already been initialized
+      return true
     }
 
-    return this.#performer.perform(...argList)
+    const Performer = this.constructor.Performer
+    if (!Performer) {
+      // No performer is defined
+      return false
+    }
+
+    // Allow multiple performers to be used
+    const Performers = [].concat(Performer)
+
+    const performers = Performers
+    .map(Performer => this.#generatePerformer(Performer))
+    .reverse()
+
+    this.#performers = performers
+
+    this.#perform = performers.reduce((prev, performer) => {
+      return (...args) => performer.perform(prev, ...args)
+    }, this._perform.bind(this))
+
+    return true
+  }
+
+  #generatePerformer (Performer) {
+    const options = {
+      // Performer class options
+      ...(Performer.DEFAULT_OPTIONS || {}),
+      // Class options
+      ...(this.constructor.performerOptions || {}),
+      // Instance options
+      ...(this.#performerOptions || {})
+    }
+
+    return new Performer(options)
   }
 }
 

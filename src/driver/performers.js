@@ -12,7 +12,6 @@ class ThrottledPerformer extends Pausable {
   #lastProcessed
   #throttlePromise
   #throttle
-  #perform
 
   static DEFAULT_OPTIONS = {
     throttle: 100
@@ -20,11 +19,10 @@ class ThrottledPerformer extends Pausable {
 
   constructor ({
     throttle
-  }, perform) {
+  }) {
     super()
 
     this.#throttle = throttle
-    this.#perform = perform
   }
 
   cancel () {
@@ -59,7 +57,7 @@ class ThrottledPerformer extends Pausable {
     this.#lastProcessed = Date.now()
   }
 
-  async perform (...args) {
+  async perform (perform,...args) {
     this.#canceled = false
 
     await this.#wait()
@@ -70,7 +68,7 @@ class ThrottledPerformer extends Pausable {
 
     await this.waitPause()
 
-    return this.#perform(...args)
+    return perform(...args)
   }
 }
 
@@ -81,7 +79,6 @@ class IntervalPerformer extends Pausable {
   #canceled = false
   #lastChecked
   #interval
-  #perform
   #running = false
 
   static DEFAULT_OPTIONS = {
@@ -90,11 +87,10 @@ class IntervalPerformer extends Pausable {
 
   constructor ({
     interval
-  }, perform) {
+  }) {
     super()
 
     this.#interval = interval
-    this.#perform = perform
   }
 
   cancel () {
@@ -114,7 +110,7 @@ class IntervalPerformer extends Pausable {
     return
   }
 
-  async perform (...args) {
+  async perform (perform, ...args) {
     if (this.#running) {
       // IntervalPerformer is not allowed to be started twice
       throw new Error(
@@ -123,12 +119,12 @@ class IntervalPerformer extends Pausable {
     }
 
     this.#running = true
-    const result = await this.#start(...args)
+    const result = await this.#start(perform, ...args)
     this.#running = false
     return result
   }
 
-  async #start (...args) {
+  async #start (perform, ...args) {
     this.#canceled = false
 
     while (true) {
@@ -146,7 +142,7 @@ class IntervalPerformer extends Pausable {
 
       await this.waitPause()
 
-      const matched = await this.#perform(...args)
+      const matched = await perform(...args)
       this.#lastChecked = Date.now()
 
       if (matched) {
@@ -158,15 +154,13 @@ class IntervalPerformer extends Pausable {
 
 
 class SharedPerformer extends Pausable {
-  #perform
   #resultPromise
 
-  constructor (_, perform) {
+  constructor () {
     super()
-    this.#perform = perform
   }
 
-  async perform (...args) {
+  async perform (perform, ...args) {
     if (this.#resultPromise) {
       // Whatever the args are, just return the same result
       return this.#resultPromise
@@ -175,7 +169,7 @@ class SharedPerformer extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#resultPromise = promise
 
-    const result = await this.#perform(...args)
+    const result = await perform(...args)
 
     resolve(result)
     this.#resultPromise = UNDEFINED
