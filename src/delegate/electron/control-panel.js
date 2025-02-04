@@ -8,6 +8,12 @@ const captureBtn = document.getElementById('captureBtn')
 const pixelPickerBtn = document.getElementById('pixelPickerBtn')
 const pixelDisplay = document.getElementById('pixelDisplay')
 
+// New element selectors for the custom capture section
+const captureXInput = document.getElementById('captureX')
+const captureYInput = document.getElementById('captureY')
+const captureWidthInput = document.getElementById('captureWidth')
+const captureHeightInput = document.getElementById('captureHeight')
+const customCaptureBtn = document.getElementById('customCaptureBtn')
 
 const toggleCaptureMode = (enable = !isCapturing) => {
   isCapturing = enable
@@ -41,6 +47,21 @@ pixelPickerBtn.addEventListener('click', () => {
   togglePixelPickerMode()
 })
 
+/* New custom capture listener */
+customCaptureBtn.addEventListener('click', () => {
+  const x = parseFloat(captureXInput.value)
+  const y = parseFloat(captureYInput.value)
+  const width = parseFloat(captureWidthInput.value)
+  const height = parseFloat(captureHeightInput.value)
+
+  if (isNaN(x) || isNaN(y) || isNaN(width) || isNaN(height)) {
+    alert('Please enter valid numbers in all fields')
+    return
+  }
+
+  // Send the capture-region event with the custom bounds
+  ipcRenderer.send('capture-region', { x, y, width, height })
+})
 
 ipcRenderer.on('pixel-update', (event, pixel) => {
   const {x, y, rgb} = pixel

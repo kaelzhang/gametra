@@ -18,12 +18,38 @@
       border: 1px solid #ccc;
       display: none;
     }
+    /* New style section for custom capture inputs */
+    #customCapture {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: space-between;
+    }
+    #customCapture input {
+      flex: 1 1 calc(25% - 10px);
+      padding: 5px;
+      min-width: 60px;
+    }
+    #customCapture button {
+      flex-basis: 100%;
+    }
   </style>
 </head>
 <body>
   <button id="captureBtn">Capture Region</button>
   <button id="pixelPickerBtn">Pick Pixel</button>
   <div id="pixelDisplay"></div>
+
+  <!-- New Capture Section -->
+  <div id="customCapture">
+    <input type="number" id="captureX" placeholder="x" />
+    <input type="number" id="captureY" placeholder="y" />
+    <input type="number" id="captureWidth" placeholder="width" />
+    <input type="number" id="captureHeight" placeholder="height" />
+    <button id="customCaptureBtn">Capture</button>
+  </div>
+
   <script src="control-panel.js"></script>
 </body>
 </html>
