@@ -23,8 +23,9 @@ class EventSynthesizer {
     // The pixel speed of mouse movement in a millisecond
     mouseMoveSpeed = 4,
     mouseEventInterval = 9,
-    // The easing function to use for mouse movement
-    easing = 'Ease.Out'
+    // The easing function to use for mouse movement,
+    // defaults to `Quadratic.Out` (fast -> slow )
+    easing = 'Quadratic.Out'
   } = {}) {
     this.#delegate = delegate
     this.#mouseMoveSpeed = mouseMoveSpeed
@@ -36,45 +37,30 @@ class EventSynthesizer {
   }
 
   // Imitate the real mouse move of human
-  async mouseMove (x, y, {
-    // Starting point of the movement.
-    // If not provided, the internal current mouse position will be used.
-    from
-  } = {}) {
-    if (!from) {
-      from = {
-        x: this.#delegate.x,
-        y: this.#delegate.y
-      }
-    }
-
-    if (x === from.x && y === from.y) {
-      return
-    }
-
-    const {
-      x: x0,
-      y: y0
-    } = from
+  async mouseMove (x, y) {
+    const x0 = this.#delegate.x
+    const y0 = this.#delegate.y
 
     const distance = ((x - x0) ** 2 + (y - y0) ** 2) ** .5
     const time = Math.floor(distance / this.#mouseMoveSpeed)
 
-    const steps = Math.max(
-      Math.floor(time / this.#mouseEventInterval),
-      1
-    )
+    const steps = Math.floor(time / this.#mouseEventInterval)
 
-    const deltaX = (x - x0) / steps
-    const deltaY = (y - y0) / steps
+    if (steps > 1) {
+      const deltaX = x - x0
+      const deltaY = y - y0
 
-    for (let i = i; i < steps; i ++) {
-      await this.#delegate.mouseMove(
-        Math.floor(x0 + deltaX * i),
-        Math.floor(y0 + deltaY * i)
-      )
+      for (let i = 1; i < steps; i ++) {
+        const t = this.#mouseEventInterval * i / time
 
-      await setTimeout(this.#mouseEventInterval)
+        // `delegate#mouseMove` already rounds the coordinates to integers
+        await this.#delegate.mouseMove(
+          x0 + deltaX * this.#easing(t),
+          y0 + deltaY * this.#easing(t)
+        )
+
+        await setTimeout(this.#mouseEventInterval)
+      }
     }
 
     await this.#delegate.mouseMove(x, y)
@@ -88,8 +74,8 @@ class EventSynthesizer {
     await this.mouseMove(x, y)
 
     for (let i = 0; i < count; i ++) {
-      await this.#delegate.mouseDown(x, y, {button})
-      await this.#delegate.mouseUp(x, y, {button})
+      await this.#delegate.mouseDown({button})
+      await this.#delegate.mouseUp({button})
 
       if (delay) {
         await setTimeout(delay)
@@ -102,10 +88,13 @@ class EventSynthesizer {
     await this.#delegate.keyUp(accelerator)
   }
 
-  async swipe (deltaX, deltaY, {
-    from
-  } = {}) {
-    await this.mouseMove(deltaX, deltaY)
+  async swipe (deltaX, deltaY) {
+    await this.#delegate.mouseDown()
+    await this.mouseMove(
+      this.#delegate.x + deltaX,
+      this.#delegate.y + deltaY
+    )
+    await this.#delegate.mouseUp()
   }
 }
 

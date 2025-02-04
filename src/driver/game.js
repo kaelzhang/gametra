@@ -54,7 +54,7 @@ class Game {
     return await action.perform(this)
   }
 
-  _performDelegate (method, ...args) {
+  _performDelegated (method, ...args) {
     return this.#delegate[method](...args)
   }
 
@@ -77,7 +77,7 @@ const DELEGATE_METHODS = [
 
 DELEGATE_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
-    return this._performDelegate(method, ...args)
+    return this._performDelegated(method, ...args)
   }
 })
 

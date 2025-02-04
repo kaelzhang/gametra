@@ -143,6 +143,10 @@ class ElectronDelegate {
 
     await mainWindow.loadURL(url)
 
+    // Set the initial mouse position to the bottom center of the window
+    this.#x = Math.floor(width / 2)
+    this.#y = height - 1
+
     return promise
   }
 
@@ -193,6 +197,9 @@ class ElectronDelegate {
   }
 
   async mouseMove (x, y) {
+    x = Math.floor(x)
+    y = Math.floor(y)
+
     this.#mainWindow.webContents.sendInputEvent({
       type: 'mouseMove',
       x,
