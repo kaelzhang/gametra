@@ -142,3 +142,34 @@ test('action performs after throttle time', async t => {
 
   t.true(cost < 202)
 })
+
+
+test('throttled action options', async t => {
+  let count = 0
+
+  class TestAction extends Action {
+    static Performer = ThrottledPerformer
+
+    async _perform () {
+      count ++
+    }
+  }
+
+  const action = new TestAction().options({throttle: 200})
+
+  action.perform()
+  action.perform()
+  action.perform()
+
+  await setTimeout(1)
+  t.is(count, 1)
+
+  await setTimeout(100)
+  t.is(count, 1)
+
+  await setTimeout(250)
+  t.is(count, 2)
+
+  await setTimeout(450)
+  t.is(count, 3)
+})
