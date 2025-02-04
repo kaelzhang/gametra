@@ -4,12 +4,9 @@ const log = require('util').debuglog('gametra')
 const {setTimeout} = require('node:timers/promises')
 
 const {
-  Action
-} = require('../src/driver/action')
-
-const {
+  Action,
   IntervalPerformer
-} = require('../src/driver/performers')
+} = require('..')
 
 
 test('performer already running', async t => {

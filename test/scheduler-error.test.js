@@ -3,10 +3,10 @@ const log = require('util').debuglog('gametra')
 
 const {setTimeout} = require('node:timers/promises')
 
-const {Scheduler} = require('../src/driver/scheduler')
 const {
-  Action
-} = require('../src/driver/action')
+  Action,
+  Scheduler
+} = require('..')
 
 
 test('add outside of an event handler', t => {

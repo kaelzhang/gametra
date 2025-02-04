@@ -8,6 +8,7 @@ const {
   IntervalPerformer,
   SharedPerformer
 } = require('./driver/performers')
+const {Scheduler} = require('./driver/scheduler')
 
 module.exports = {
   Game,
@@ -17,5 +18,6 @@ module.exports = {
   SharedPerformer,
   ImageMatcher,
   ElectronDelegate,
-  Viewport
+  Viewport,
+  Scheduler
 }

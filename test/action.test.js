@@ -7,7 +7,7 @@ const {
   Action,
   IntervalPerformer,
   ThrottledPerformer
-} = require('../src/driver/action')
+} = require('..')
 
 
 test('not implemented', t => {

@@ -96,6 +96,14 @@ class Action extends Pausable {
     : this._perform(...argList)
   }
 
+  // Take the following Action class as an example:
+  // ```
+  // Class MyAction extends Action {
+  //   static Performer = [PA, PB]
+  // }
+  // ```
+  // -> (PA -> (PB -> action))
+  //
   // Returns true if there are performers
   #initPerformers () {
     if (this.#performers) {
@@ -114,10 +122,13 @@ class Action extends Pausable {
 
     const performers = Performers
     .map(Performer => this.#generatePerformer(Performer))
+    // [PB, PA]
     .reverse()
 
     this.#performers = performers
 
+    // Execution order:
+    // outside -> PA -> (PB -> action)
     this.#perform = performers.reduce((prev, performer) => {
       return (...args) => performer.perform(prev, ...args)
     }, this._perform.bind(this))

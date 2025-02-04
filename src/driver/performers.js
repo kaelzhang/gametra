@@ -181,5 +181,6 @@ class SharedPerformer extends Pausable {
 
 module.exports = {
   ThrottledPerformer,
-  IntervalPerformer
+  IntervalPerformer,
+  SharedPerformer
 }
