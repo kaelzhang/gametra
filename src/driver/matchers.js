@@ -11,69 +11,56 @@ const {
 } = require('../util')
 
 class ImageMatcher extends Action {
-  static Performer = IntervalPerformer
-
   #viewport
   #to
   #toPromise
-  #toResolve
-  #toChecked = false
   #similarity
 
   constructor (
     viewport,
     // The target image buffer to match, could be either
     // - a string path to the image file
-    // - a Jimp instance
+    // - string paths to the image files
     to, {
       similarity = 0.9
     } = {}
   ) {
     super()
     this.#viewport = viewport
-    this.#to = to
+    this.#to = [].concat(to)
 
-    const {
-      promise,
-      resolve
-    } = Promise.withResolvers()
-
-    this.#toPromise = promise
-    this.#toResolve = resolve
     this.#similarity = similarity
   }
 
-  async #checkTo () {
-    if (this.#toChecked) {
+  async #targetImages () {
+    if (this.#toPromise) {
       return this.#toPromise
     }
 
-    this.#toChecked = true
+    const {promise, resolve} = Promise.withResolvers()
 
-    let to
+    this.#toPromise = promise
 
-    if (typeof this.#to === 'string') {
-      to = await Jimp.read(this.#to)
-    } else {
-      to = this.#to
-    }
+    const images = await Promise.all(this.#to.map(to => Jimp.read(to)))
+    resolve(images)
 
-    this.#toResolve(to)
-    return to
+    return images
   }
 
   async _perform (game) {
-    const [viewport, to] = await Promise.all([
+    const [viewport, images] = await Promise.all([
       game.screenshot(this.#viewport),
-      this.#checkTo()
+      this.#targetImages()
     ])
 
-    // Compare the similarity between `viewport` and `this.#to`,
-    const similarity = this.#compare(viewport.bitmap, to.bitmap)
+    return Promise.all(
+      images.map(image => {
+        const similarity = this.#compare(viewport.bitmap, image.bitmap)
+        log('similarity', this.#viewport.object(), similarity)
 
-    log('similarity', this.#viewport.object(), similarity)
-
-    return similarity >= this.#similarity
+        return similarity >= this.#similarity
+      })
+    )
   }
 
   #compare (from, to) {
