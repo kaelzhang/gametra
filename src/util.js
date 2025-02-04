@@ -83,6 +83,13 @@ class Pausable extends EventEmitter {
   }
 
   pause () {
+    if (this.#pausePromise) {
+      // Already paused. Skip.
+      // We should never pause again,
+      // or the promise created previously will never be resolved
+      return
+    }
+
     const {promise, resolve} = Promise.withResolvers()
 
     this.#pausePromise = promise

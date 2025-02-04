@@ -54,8 +54,6 @@ class Whenever extends Pausable {
         }
 
         await then()
-        // Pause the whenever when the condition is true
-        this.pause()
       }
     }
   }
@@ -225,7 +223,8 @@ class Scheduler extends Pausable {
         this.#currentActions.pause()
       }
 
-      // Pause the parent scheduler
+      // Pause the parent scheduler,
+      // which will also pause the whenever
       this.pause()
 
       this.emit('fork')

@@ -83,14 +83,22 @@ test('a complex case: pause and resume', async t => {
 
   fork()
   // Give time for forkCondition to return true
-  await setTimeout(110)
-  const currentCount = count
+  await setTimeout(500)
 
   // The forked scheduler should only run once,
   // even after a lot of time
+  t.is(forkedCount, 1)
+
+  scheduler.resume()
+
+  // Try to fork again
+  fork()
+  // Give time for forkCondition to return true
   await setTimeout(500)
 
-  t.is(forkedCount, 1)
+  // The forked scheduler should only run once,
+  // even after a lot of time
+  t.is(forkedCount, 2)
 
   scheduler.pause()
 })
