@@ -2,6 +2,7 @@ const {
   setTimeout
 } = require('node:timers/promises')
 
+const {Action} = require('./action')
 const {Pausable} = require('../util')
 
 const {
@@ -59,6 +60,12 @@ class Whenever extends Pausable {
     }
   }
 }
+
+
+const makeWhen = when => when instanceof Action
+  ? (...args) => when.perform(...args)
+  : when
+
 
 class Scheduler extends Pausable {
   #master
@@ -133,7 +140,7 @@ class Scheduler extends Pausable {
 
     // Already initialized
     if (this.#master && this.#args) {
-      // Then try to start the scheduler again
+      // Then try to start the master scheduler again
       this.#start()
     }
   }
@@ -168,8 +175,12 @@ class Scheduler extends Pausable {
     }
   }
 
+  fork (when, ...rest) {
+    return this.#fork(makeWhen(when), ...rest)
+  }
+
   // Create a forked branch of the scheduler
-  fork (
+  #fork (
     when,
     // Two scheduler should fork into a same scheduler,
     // otherwise, a new scheduler will be created
@@ -187,6 +198,9 @@ class Scheduler extends Pausable {
       this.pause()
 
       this.emit('fork')
+
+      // The sub scheduler has been forked
+      scheduler.emit('forked')
 
       // Resume the sub scheduler and start it
       scheduler.resume()
@@ -207,9 +221,13 @@ class Scheduler extends Pausable {
     return scheduler
   }
 
+  reset (when) {
+    return this.#reset(makeWhen(when))
+  }
+
   // Restart the scheduler,
   // clean all actions, and emit the idle event
-  reset (when) {
+  #reset (when) {
     const whenever = new Whenever(when).then(() => {
       this.#actions.length = 0
 
