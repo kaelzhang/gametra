@@ -300,6 +300,10 @@ class Scheduler extends Pausable {
     await this.#start()
   }
 
+  get started () {
+    return this.#started
+  }
+
   async #start () {
     if (this.#completePromise) {
       // Do not restart the scheduler again

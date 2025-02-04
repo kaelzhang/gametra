@@ -14,22 +14,17 @@ class ImageMatcher extends Action {
   #viewport
   #to
   #toPromise
-  #similarity
 
   constructor (
     viewport,
     // The target image buffer to match, could be either
     // - a string path to the image file
     // - string paths to the image files
-    to, {
-      similarity = 0.9
-    } = {}
+    to
   ) {
     super()
     this.#viewport = viewport
     this.#to = [].concat(to)
-
-    this.#similarity = similarity
   }
 
   async #targetImages () {
@@ -53,14 +48,13 @@ class ImageMatcher extends Action {
       this.#targetImages()
     ])
 
-    return Promise.all(
-      images.map(image => {
-        const similarity = this.#compare(viewport.bitmap, image.bitmap)
-        log('similarity', this.#viewport.object(), similarity)
-
-        return similarity >= this.#similarity
-      })
+    const similarities = await Promise.all(
+      images.map(image => this.#compare(viewport.bitmap, image.bitmap))
     )
+
+    log('image matcher similarities', similarities)
+
+    return similarities
   }
 
   #compare (from, to) {
