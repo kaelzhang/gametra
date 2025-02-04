@@ -268,10 +268,6 @@ class Scheduler extends Pausable {
         this.#currentActions = UNDEFINED
       }
 
-      if (!this.#master) {
-        this.pause()
-      }
-
       this.emit('reset')
       this.emit('idle')
 

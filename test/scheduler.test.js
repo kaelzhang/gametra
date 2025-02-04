@@ -147,9 +147,6 @@ test('scheduler reset', async t => {
   scheduler.resume()
   await setTimeout(150)
 
-  // After reset, the scheduler should be paused,
-  // so we need to resume it
-  scheduler.resume()
   t.is(reset, true)
 
   scheduler.pause()
