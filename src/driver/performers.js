@@ -1,9 +1,13 @@
 const {setTimeout} = require('node:timers/promises')
 
 const {
-  Pausable,
-  UNDEFINED
+  Pausable
 } = require('../util')
+
+const {
+  UNDEFINED,
+  NOOP
+} = require('../const')
 
 
 // A performer that prevents an action from performing too frequently
@@ -155,26 +159,38 @@ class IntervalPerformer extends Pausable {
 
 class SharedPerformer extends Pausable {
   #resultPromise
+  #resultResolve
 
   constructor () {
     super()
   }
 
+  #resolve (result) {
+    this.#resultResolve(result)
+    this.#resultResolve = NOOP
+    this.#resultPromise = UNDEFINED
+  }
+
+  cancel () {
+    this.#resolve()
+  }
+
   async perform (perform, ...args) {
-    if (this.#resultPromise) {
-      // Whatever the args are, just return the same result
-      return this.#resultPromise
+    if (!this.#resultPromise) {
+      this.#perform(perform, ...args)
     }
 
+    return this.#resultPromise
+  }
+
+  #perform (perform, ...args) {
     const {promise, resolve} = Promise.withResolvers()
     this.#resultPromise = promise
+    this.#resultResolve = resolve
 
-    const result = await perform(...args)
-
-    resolve(result)
-    this.#resultPromise = UNDEFINED
-
-    return result
+    perform(...args).then(result => {
+      this.#resolve(result)
+    })
   }
 }
 
