@@ -22,7 +22,7 @@ class EventSynthesizer {
   constructor (delegate, {
     // The pixel speed of mouse movement in a millisecond
     mouseMoveSpeed = 4,
-    mouseEventInterval = 9,
+    mouseEventInterval = 12,
     // The easing function to use for mouse movement,
     // defaults to `Quadratic.Out` (fast -> slow )
     easing = 'Quadratic.Out'

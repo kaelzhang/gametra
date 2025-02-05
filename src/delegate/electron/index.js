@@ -22,11 +22,19 @@ const {
 } = require('../../const')
 
 
+const getInitialMousePosition = (width, height) => {
+  return {
+    x: Math.floor(width / 3),
+    y: 1
+  }
+}
+
 class ElectronDelegate extends EventEmitter {
   #mainWindow
   #controlPanel
   #debug
   #downloadPath
+  #initialMousePosition
   #readyPromise
   #resolveReady
   #batchId
@@ -35,11 +43,13 @@ class ElectronDelegate extends EventEmitter {
 
   constructor ({
     debug = false,
-    downloadPath
+    downloadPath,
+    initialMousePosition = getInitialMousePosition
   } = {}) {
     super()
 
     this.#debug = debug
+    this.#initialMousePosition = initialMousePosition
 
     if (typeof downloadPath !== 'string') {
       throw new TypeError('downloadPath must be specified')
@@ -146,9 +156,10 @@ class ElectronDelegate extends EventEmitter {
 
     await mainWindow.loadURL(url)
 
-    // Set the initial mouse position to the bottom center of the window
-    this.#x = Math.floor(width / 2)
-    this.#y = height - 1
+    const initPos = this.#initialMousePosition(width, height)
+
+    this.#x = initPos.x
+    this.#y = initPos.y
 
     return promise
   }
