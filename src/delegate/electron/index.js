@@ -1,6 +1,7 @@
 const {join} = require('node:path')
 const fs = require('node:fs/promises')
 const {setTimeout} = require('node:timers/promises')
+const EventEmitter = require('node:events')
 
 const {
   log,
@@ -21,7 +22,7 @@ const {
 } = require('../../const')
 
 
-class ElectronDelegate {
+class ElectronDelegate extends EventEmitter {
   #mainWindow
   #controlPanel
   #debug
@@ -36,6 +37,8 @@ class ElectronDelegate {
     debug = false,
     downloadPath
   } = {}) {
+    super()
+
     this.#debug = debug
 
     if (typeof downloadPath !== 'string') {
@@ -305,6 +308,15 @@ class ElectronDelegate {
     ipcMain.on('stop-pixel-picker-mode', () => {
       log('received "stop-pixel-picker-mode" from control panel')
       this.#mainWindow.webContents.send('pixel-picker-mode-change', false)
+    })
+
+    ipcMain.on('scheduler-start', () => {
+      this.emit('scheduler-start')
+      this.#mainWindow.webContents.focus()
+    })
+
+    ipcMain.on('scheduler-stop', () => {
+      this.emit('scheduler-stop')
     })
 
     // Sent from the main window

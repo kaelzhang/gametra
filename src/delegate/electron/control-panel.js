@@ -1,9 +1,11 @@
 const {ipcRenderer} = require('electron')
 
+let isAutomating = false
 let isCapturing = false
 let isPickingPixel = false
 let startPos = null
 
+const startBtn = document.getElementById('startBtn')
 const captureBtn = document.getElementById('captureBtn')
 const pixelPickerBtn = document.getElementById('pixelPickerBtn')
 const pixelDisplay = document.getElementById('pixelDisplay')
@@ -14,6 +16,23 @@ const captureYInput = document.getElementById('captureY')
 const captureWidthInput = document.getElementById('captureWidth')
 const captureHeightInput = document.getElementById('captureHeight')
 const customCaptureBtn = document.getElementById('customCaptureBtn')
+
+
+const toggleScheduler = (enable = !isAutomating) => {
+  isAutomating = enable
+  startBtn.textContent = isAutomating ? 'Stop' : 'Start'
+
+  if (isAutomating) {
+    ipcRenderer.send('scheduler-start')
+  } else {
+    ipcRenderer.send('scheduler-stop')
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  toggleScheduler()
+})
+
 
 const toggleCaptureMode = (enable = !isCapturing) => {
   isCapturing = enable
