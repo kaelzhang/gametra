@@ -18,6 +18,7 @@ class Action extends Pausable {
   #performerOptions
   #cancel
   #canceled = false
+  #useQueue = true
 
   _perform () {
     throw new NotImplementedError(
@@ -36,6 +37,11 @@ class Action extends Pausable {
     if (typeof this._cancel === 'function') {
       return this._cancel()
     }
+  }
+
+  queue (useQueue = true) {
+    this.#useQueue = useQueue
+    return this
   }
 
   pause () {
@@ -101,10 +107,13 @@ class Action extends Pausable {
   }
 
   #performInQueue (...args) {
+    return this.#useQueue
     // `_perform` is the smallest and atomic unit of action,
     // so it is always performed in the queue.
     // Also, `Queue` has an internal error handling mechanism
-    return GLOBAL_ACTION_QUEUE.add(() => this._perform(...args))
+    ? GLOBAL_ACTION_QUEUE.add(() => this._perform(...args))
+    // Unless we explicitly set `useQueue` to false.
+    : this._perform(...args)
   }
 
   // Take the following Action class as an example:

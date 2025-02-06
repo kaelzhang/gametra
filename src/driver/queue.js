@@ -9,7 +9,10 @@ class Queue {
   // Create an async queue, that
   add (factory) {
     const result = this.#chain.then(factory)
-    this.#chain = result.catch(err => {
+
+    this.#chain = result
+    // So that the chain is not broken by an error
+    .catch(err => {
       // TODO:
       // Log the error to an error log file
       log('Error in queue', err)
