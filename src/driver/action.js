@@ -6,11 +6,15 @@ const {
   Pausable
 } = require('../util')
 
+const {Queue} = require('./queue')
+
+const GLOBAL_ACTION_QUEUE = new Queue()
+
 
 class Action extends Pausable {
   #partial
   #performers
-  #perform
+  #runByPerformers
   #performerOptions
   #cancel
   #canceled = false
@@ -92,8 +96,15 @@ class Action extends Pausable {
     const argList = this.#getArgs(args)
 
     return this.#initPerformers()
-    ? this.#perform(...argList)
-    : this._perform(...argList)
+    ? this.#runByPerformers(...argList)
+    : this.#performInQueue(...argList)
+  }
+
+  #performInQueue (...args) {
+    // `_perform` is the smallest and atomic unit of action,
+    // so it is always performed in the queue.
+    // Also, `Queue` has an internal error handling mechanism
+    return GLOBAL_ACTION_QUEUE.add(() => this._perform(...args))
   }
 
   // Take the following Action class as an example:
@@ -129,9 +140,9 @@ class Action extends Pausable {
 
     // Execution order:
     // outside -> PA -> (PB -> action)
-    this.#perform = performers.reduce((prev, performer) => {
+    this.#runByPerformers = performers.reduce((prev, performer) => {
       return (...args) => performer.perform(prev, ...args)
-    }, this._perform.bind(this))
+    }, this.#performInQueue.bind(this))
 
     return true
   }
