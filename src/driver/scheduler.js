@@ -100,7 +100,6 @@ class Scheduler extends Pausable {
   #master
   #actions = []
   #completePromise
-  #currentActions
   #args
   #withinEventHandler = false
   #started = false
@@ -144,12 +143,16 @@ class Scheduler extends Pausable {
   pause () {
     this.#pauseMonitors()
 
-    // Pause the current action
-    if (this.#currentActions) {
-      this.#currentActions.pause()
-    }
+    // Pause all actions, including the current one
+    this.#pauseActions()
 
     super.pause()
+  }
+
+  #pauseActions () {
+    for (const action of this.#actions) {
+      action.pause()
+    }
   }
 
   resume () {
@@ -162,11 +165,15 @@ class Scheduler extends Pausable {
 
     super.resume()
 
-    if (this.#currentActions) {
-      this.#currentActions.resume()
-    }
+    this.#resumeActions()
 
     this.#resumeMonitors()
+  }
+
+  #resumeActions () {
+    for (const action of this.#actions) {
+      action.resume()
+    }
   }
 
   add (...actions) {
@@ -261,12 +268,7 @@ class Scheduler extends Pausable {
   // clean all actions, and emit the idle event
   #reset (when) {
     const whenever = new Whenever(when).then(() => {
-      this.#actions.length = 0
-
-      if (this.#currentActions) {
-        this.#currentActions.cancel()
-        this.#currentActions = UNDEFINED
-      }
+      this.#resetActions()
 
       this.emit('reset')
       this.emit('idle')
@@ -277,6 +279,15 @@ class Scheduler extends Pausable {
     this.#addWhenever(whenever)
 
     return this
+  }
+
+  #resetActions () {
+    // Cancel all actions
+    for (const action of this.#actions) {
+      action.cancel()
+    }
+
+    this.#actions.length = 0
   }
 
   async start (...args) {
@@ -319,9 +330,7 @@ class Scheduler extends Pausable {
         break
       }
 
-      this.#currentActions = actions
       await actions.perform(...this.#args)
-      this.#currentActions = UNDEFINED
     }
 
     if (!this.#master) {
