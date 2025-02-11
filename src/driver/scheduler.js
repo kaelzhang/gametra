@@ -100,6 +100,7 @@ class Scheduler extends Pausable {
   #master
   #actions = []
   #completePromise
+  #currentActions
   #args
   #withinEventHandler = false
   #started = false
@@ -143,6 +144,10 @@ class Scheduler extends Pausable {
   pause () {
     this.#pauseMonitors()
 
+    if (this.#currentActions) {
+      this.#currentActions.pause()
+    }
+
     // Pause all actions, including the current one
     this.#pauseActions()
 
@@ -166,6 +171,10 @@ class Scheduler extends Pausable {
     super.resume()
 
     this.#resumeActions()
+
+    if (this.#currentActions) {
+      this.#currentActions.resume()
+    }
 
     this.#resumeMonitors()
   }
@@ -282,6 +291,11 @@ class Scheduler extends Pausable {
   }
 
   #resetActions () {
+    if (this.#currentActions) {
+      this.#currentActions.cancel()
+      this.#currentActions = UNDEFINED
+    }
+
     // Cancel all actions
     for (const action of this.#actions) {
       action.cancel()
@@ -330,7 +344,9 @@ class Scheduler extends Pausable {
         break
       }
 
+      this.#currentActions = actions
       await actions.perform(...this.#args)
+      this.#currentActions = UNDEFINED
     }
 
     if (!this.#master) {
