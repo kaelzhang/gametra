@@ -9,18 +9,20 @@ const {
   encodeNativeBMPImage
 } = require('../../util')
 
-const {
-  BrowserWindow,
-  app,
-  ipcMain,
-  session
-} = require('electron')
+const electron = require('electron')
 
 const {
   UNDEFINED,
   NOOP,
   BUTTON_LEFT
 } = require('../../const')
+
+const {
+  BrowserWindow,
+  app,
+  ipcMain,
+  session
+} = electron
 
 
 const getInitialMousePosition = (width, height) => {
