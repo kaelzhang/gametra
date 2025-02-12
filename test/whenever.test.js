@@ -27,6 +27,8 @@ test('whenever', async t => {
   })
 
   whenever.start()
+  // It could be started twice but it should be ignored
+  whenever.start()
 
   await setTimeout(100)
 
@@ -61,20 +63,3 @@ test('whenever', async t => {
 
   whenever.pause()
 })
-
-
-test('whenever starts twice', t => {
-  const whenever = new Whenever(async () => {
-    await setTimeout(50)
-    return true
-  })
-  .then(() => {})
-
-  t.throws(() => {
-    whenever.start()
-    whenever.start()
-  })
-
-  whenever.pause()
-})
-

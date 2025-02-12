@@ -26,7 +26,8 @@ class Whenever extends Pausable {
 
   start (...args) {
     if (this.#args) {
-      throw new Error('A Whenever should not be started more than once')
+      // If already started, we should skip the start
+      return
     }
 
     this.#args = args
