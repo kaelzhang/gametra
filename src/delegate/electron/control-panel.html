@@ -24,19 +24,19 @@
       display: none;
     }
     /* New style section for custom capture inputs */
-    #customCapture {
+    .fieldGroup {
       margin-top: 10px;
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
       justify-content: space-between;
     }
-    #customCapture input {
+    .fieldGroup input {
       flex: 1 1 calc(25% - 10px);
       padding: 5px;
       min-width: 60px;
     }
-    #customCapture button {
+    .fieldGroup button {
       flex-basis: 100%;
     }
   </style>
@@ -48,12 +48,18 @@
   <div id="pixelDisplay"></div>
 
   <!-- New Capture Section -->
-  <div id="customCapture">
+  <div class="fieldGroup">
     <input type="number" id="captureX" placeholder="x" />
     <input type="number" id="captureY" placeholder="y" />
     <input type="number" id="captureWidth" placeholder="width" />
     <input type="number" id="captureHeight" placeholder="height" />
     <button id="customCaptureBtn">Capture</button>
+  </div>
+
+  <div class="fieldGroup"></div>
+    <input type="number" id="jumpDeltaX" placeholder="deltaX" />
+    <input type="number" id="jumpDeltaY" placeholder="deltaY" />
+    <button id="jumpBtn">Jump</button>
   </div>
 
   <script src="control-panel.js"></script>

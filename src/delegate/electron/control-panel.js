@@ -17,6 +17,13 @@ const captureWidthInput = document.getElementById('captureWidth')
 const captureHeightInput = document.getElementById('captureHeight')
 const customCaptureBtn = document.getElementById('customCaptureBtn')
 
+const jumpDeltaXInput = document.getElementById('jumpDeltaX')
+const jumpDeltaYInput = document.getElementById('jumpDeltaY')
+const jumpBtn = document.getElementById('jumpBtn')
+
+
+// Toggle scheduler
+// ------------------------------------------------------------
 
 const toggleScheduler = (enable = !isAutomating) => {
   isAutomating = enable
@@ -34,6 +41,9 @@ startBtn.addEventListener('click', () => {
 })
 
 
+// Toggle capture mode
+// ------------------------------------------------------------
+
 const toggleCaptureMode = (enable = !isCapturing) => {
   isCapturing = enable
   captureBtn.textContent = isCapturing ? 'Cancel Capture' : 'Capture Region'
@@ -50,6 +60,9 @@ captureBtn.addEventListener('click', () => {
 })
 
 
+// Toggle pixel picker mode
+// ------------------------------------------------------------
+
 const togglePixelPickerMode = (enable = !isPickingPixel) => {
   isPickingPixel = enable
   pixelPickerBtn.textContent = enable ? 'Stop Picking' : 'Pick Pixel'
@@ -65,6 +78,10 @@ const togglePixelPickerMode = (enable = !isPickingPixel) => {
 pixelPickerBtn.addEventListener('click', () => {
   togglePixelPickerMode()
 })
+
+
+// Custom capture
+// ------------------------------------------------------------
 
 /* New custom capture listener */
 customCaptureBtn.addEventListener('click', () => {
@@ -98,4 +115,15 @@ ipcRenderer.on('capture-complete', (event, data) => {
 
 ipcRenderer.on('pixel-pick-complete', (event, data) => {
   togglePixelPickerMode(false)
+})
+
+
+// Jump
+// ------------------------------------------------------------
+
+jumpBtn.addEventListener('click', () => {
+  ipcRenderer.send('custom-event', 'jump', {
+    deltaX: jumpDeltaXInput.value,
+    deltaY: jumpDeltaYInput.value
+  })
 })

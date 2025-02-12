@@ -330,6 +330,10 @@ class ElectronDelegate extends EventEmitter {
       this.emit('scheduler-stop')
     })
 
+    ipcMain.on('custom-event', (event, name, payload) => {
+      this.emit(name, payload)
+    })
+
     // Sent from the main window
     // ------------------------------------------------------------
     ipcMain.on('capture-region', async (event, bounds) => {
@@ -355,6 +359,10 @@ class ElectronDelegate extends EventEmitter {
         log('Color picking failed:', error)
       }
     })
+  }
+
+  focus () {
+    this.#mainWindow.webContents.focus()
   }
 
   // Returns a Jimp image
