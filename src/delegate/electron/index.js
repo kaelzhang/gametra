@@ -12,7 +12,8 @@ const {
 const {
   BrowserWindow,
   app,
-  ipcMain
+  ipcMain,
+  session
 } = require('electron')
 
 const {
@@ -34,6 +35,8 @@ class ElectronDelegate extends EventEmitter {
   #controlPanel
   #debug
   #downloadPath
+  // #userDataPath
+  #user
   #initialMousePosition
   #readyPromise
   #resolveReady
@@ -44,6 +47,8 @@ class ElectronDelegate extends EventEmitter {
   constructor ({
     debug = false,
     downloadPath,
+    userDataPath,
+    user,
     initialMousePosition = getInitialMousePosition
   } = {}) {
     super()
@@ -56,8 +61,13 @@ class ElectronDelegate extends EventEmitter {
     }
 
     this.#downloadPath = downloadPath
+    this.#user = user
 
     this.#init()
+
+    // if (userDataPath) {
+    //   app.setPath('userData', userDataPath)
+    // }
 
     app.whenReady().then(() => {
       this.#resolveReady()
@@ -120,15 +130,22 @@ class ElectronDelegate extends EventEmitter {
     height,
     userAgent
   }) {
+    const webPreferences = {
+      preload: join(__dirname, 'main-window.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+
+    if (this.#user) {
+      console.log('webPreferences >>>>', this.#user)
+      webPreferences.partition = `persist:${this.#user}`
+    }
+
     const mainWindow = this.#mainWindow = new BrowserWindow({
       width,
       height,
-      resizable: false,
-      webPreferences: {
-        preload: join(__dirname, 'main-window.js'),
-        contextIsolation: true,
-        nodeIntegration: false
-      }
+      webPreferences,
+      resizable: false
     })
 
     if (this.#debug) {
@@ -170,7 +187,7 @@ class ElectronDelegate extends EventEmitter {
 
     const controlPanel = this.#controlPanel = new BrowserWindow({
       width: 200,
-      height: 400,
+      height: bounds.height,
       x: bounds.x + bounds.width,
       y: bounds.y,
       resizable: false,
