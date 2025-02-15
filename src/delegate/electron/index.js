@@ -150,9 +150,12 @@ class ElectronDelegate extends EventEmitter {
       resizable: false
     })
 
+    const {webContents} = mainWindow
+    webContents.setUserAgent(userAgent)
+
     if (this.#debug) {
       // open devtools in exeternal window
-      mainWindow.webContents.openDevTools({
+      webContents.openDevTools({
         mode: 'undocked'
       })
     }
@@ -161,10 +164,6 @@ class ElectronDelegate extends EventEmitter {
     this.#initIPCHandlers()
 
     const {promise, resolve} = Promise.withResolvers()
-
-    const {webContents} = mainWindow
-
-    webContents.setUserAgent(userAgent)
 
     webContents.on('did-finish-load', () => {
       resolve()
