@@ -107,6 +107,7 @@ class Scheduler extends Pausable {
   #started = false
   #emitsOnHold = []
   #whenevers = new Set()
+  #forked = UNDEFINED
 
   constructor ({
     master = true
@@ -143,6 +144,14 @@ class Scheduler extends Pausable {
   }
 
   pause () {
+    if (this.#forked) {
+      // If we call pause() when the current scheduler is forked,
+      // actually we want to pause the sub scheduler that it forked into
+      this.#forked.pause()
+
+      return
+    }
+
     this.#pauseMonitors()
 
     if (this.#currentActions) {
@@ -162,6 +171,13 @@ class Scheduler extends Pausable {
   }
 
   resume () {
+    if (this.#forked) {
+      // If the current scheduler is forked,
+      // actually we want to resume the sub scheduler that it forked into
+      this.#forked.resume()
+      return
+    }
+
     const onHold = [].concat(this.#emitsOnHold)
     this.#emitsOnHold.length = 0
 
@@ -257,7 +273,10 @@ class Scheduler extends Pausable {
 
       // Resume the sub scheduler and start it
       scheduler.resume()
+
+      this.#forked = scheduler
       await scheduler.start(...this.#args)
+      this.#forked = UNDEFINED
 
       // Resume the parent scheduler
       this.resume()
