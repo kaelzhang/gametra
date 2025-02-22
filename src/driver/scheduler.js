@@ -1,6 +1,7 @@
 const {
   setTimeout
 } = require('node:timers/promises')
+const util = require('node:util')
 
 const {Action} = require('./action')
 const {Pausable} = require('../util')
@@ -99,6 +100,7 @@ const makeWhen = when => when instanceof Action
 
 class Scheduler extends Pausable {
   #master
+  #name
   #actions = []
   #completePromise
   #currentActions
@@ -121,6 +123,16 @@ class Scheduler extends Pausable {
       // so that it won't start automatically
       this.pause()
     }
+  }
+
+  [util.inspect.custom] () {
+    const name = this.#name || 'no-name'
+    return `[Scheduler: ${name}]`
+  }
+
+  name (name) {
+    this.#name = name
+    return this
   }
 
   #initEvents () {

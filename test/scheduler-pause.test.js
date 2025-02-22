@@ -22,6 +22,11 @@ test('scheduler pause when forked', async t => {
   let count = 0
   let waitPromise
 
+  const {
+    promise: forkedActionPromise,
+    resolve: resolveForkedAction
+  } = Promise.withResolvers()
+
   class ActionForForked extends Action {
     static Performer = IntervalPerformer
     static performerOptions = {
@@ -30,6 +35,7 @@ test('scheduler pause when forked', async t => {
 
     async _perform () {
       count ++
+      resolveForkedAction()
       if (waitPromise) {
         await waitPromise
       }
@@ -42,7 +48,6 @@ test('scheduler pause when forked', async t => {
 
   const forkCondition = async () => {
     const result = shouldFork
-    // shouldFork = false
     await setTimeout(10)
     return result
   }
@@ -56,12 +61,13 @@ test('scheduler pause when forked', async t => {
   }
 
   const scheduler = new Scheduler()
+  .name('main')
   .on('idle', add => {
     add(action)
   })
 
-
   const forked = scheduler.fork(forkCondition)
+  .name('forked')
   .on('forked', add => {
     add(actionForForked)
   })
@@ -70,22 +76,24 @@ test('scheduler pause when forked', async t => {
 
   // TODO: why should we need to wait 100 ms here?
   // something potential is wrong here
-  await setTimeout(100)
+  // await setTimeout(100)
 
   const {promise, resolve} = Promise.withResolvers()
   waitPromise = promise
+
   fork()
 
-  // We need to wait 50 ms for the forked scheduler to be created
-  await setTimeout(100)
-
+  await forkedActionPromise
   const countBeforePause = count
+
   scheduler.pause()
   waitPromise = null
 
   // Release the waiter
   resolve()
 
+  // The ActionForForked will be executed repeatly,
+  // but it should be paused
   await setTimeout(200)
 
   t.is(count, countBeforePause)
