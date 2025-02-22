@@ -27,6 +27,7 @@ jobs:
         npm install
         npm run build --if-present
         npm test
+        npm run report:coverage
       env:
         CI: true
     - name: Upload results to Codecov
