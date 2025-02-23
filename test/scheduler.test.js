@@ -64,6 +64,8 @@ test('a complex case: pause and resume', async t => {
     add(actionForForked)
   })
 
+  t.is(inspect(forked), '[Scheduler: no-name]')
+
   // Run tests
   /////////////////////////////////////
 
@@ -250,7 +252,6 @@ test('forked scheduler error', async t => {
     static Performer = IntervalPerformer
 
     async _perform () {
-      console.log('interval action')
       await setTimeout(100)
     }
   }
@@ -290,8 +291,12 @@ test('forked scheduler error', async t => {
 
   scheduler.resume()
   scheduler.start()
+  t.is(scheduler.started, true)
 
   await forkedPromise
+  await setTimeout(100)
+
+  scheduler.reset(() => true)
   await setTimeout(100)
   scheduler.pause()
 })
