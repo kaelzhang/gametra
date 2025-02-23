@@ -242,7 +242,8 @@ class Scheduler extends Pausable {
     whenever.on('error', error => {
       this.emit('error', {
         type: 'whenever-error',
-        error
+        error,
+        scheduler: this
       })
     })
 
@@ -310,6 +311,10 @@ class Scheduler extends Pausable {
     })
 
     this.#addWhenever(whenever)
+
+    scheduler.on('error', error => {
+      this.emit('error', error)
+    })
 
     return scheduler
   }
@@ -396,7 +401,8 @@ class Scheduler extends Pausable {
       } catch (error) {
         this.emit('error', {
           type: 'action-error',
-          error
+          error,
+          scheduler: this
         })
       }
 

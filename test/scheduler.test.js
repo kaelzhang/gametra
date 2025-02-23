@@ -119,6 +119,11 @@ test('scheduler reset', async t => {
   let shouldReset = false
   let reset = false
 
+  const {
+    promise: resetPromise,
+    resolve: resolveReset
+  } = Promise.withResolvers()
+
   const scheduler = new Scheduler({
     master: false
   })
@@ -132,6 +137,9 @@ test('scheduler reset', async t => {
     const reset = shouldReset
     shouldReset = false
     await setTimeout(100)
+    if (reset) {
+      resolveReset()
+    }
     return reset
   })
 
@@ -145,7 +153,8 @@ test('scheduler reset', async t => {
   shouldReset = true
   scheduler.start()
   scheduler.resume()
-  await setTimeout(150)
+  await resetPromise
+  await setTimeout(1)
 
   t.is(reset, true)
 
