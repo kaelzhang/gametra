@@ -1,7 +1,7 @@
 const {
   setTimeout
 } = require('node:timers/promises')
-const util = require('node:util')
+const {inspect} = require('node:util')
 
 const {Action} = require('./action')
 const {Pausable} = require('../util')
@@ -49,6 +49,7 @@ class Whenever extends Pausable {
         yes = await when(...this.#args)
       } catch (error) {
         this.emit('error', error)
+        continue
       }
 
       // Only if the condition is true,
@@ -104,6 +105,14 @@ const makeWhen = when => when instanceof Action
   : when
 
 
+const EVENT_CREATED = 'created'
+const EVENT_IDLE = 'idle'
+const EVENT_RESET = 'reset'
+const EVENT_FORK = 'fork'
+const EVENT_FORKED = 'forked'
+const EVENT_ERROR = 'error'
+
+
 class Scheduler extends Pausable {
   #master
   #name
@@ -131,7 +140,7 @@ class Scheduler extends Pausable {
     }
   }
 
-  [util.inspect.custom] () {
+  [inspect.custom] () {
     const name = this.#name || 'no-name'
     return `[Scheduler: ${name}]`
   }
@@ -142,22 +151,27 @@ class Scheduler extends Pausable {
   }
 
   #initEvents () {
-    this.emit('created')
-    this.emit('idle')
+    this.emit(EVENT_CREATED)
+    this.emit(EVENT_IDLE)
   }
 
-  emit (event) {
+  emit (event, ...args) {
     if (this.paused) {
-      this.#emitsOnHold.push(event)
+      this.#emitsOnHold.push([event, args])
       return
     }
 
-    this.#emit(event)
+    this.#emit(event, ...args)
   }
 
-  #emit (event) {
+  #emit (event, ...args) {
+    if (event === EVENT_ERROR) {
+      super.emit(event, ...args)
+      return
+    }
+
     this.#withinEventHandler = true
-    super.emit(event, this.add.bind(this))
+    super.emit(event, this.add.bind(this), ...args)
     this.#withinEventHandler = false
   }
 
@@ -199,8 +213,8 @@ class Scheduler extends Pausable {
     const onHold = [].concat(this.#emitsOnHold)
     this.#emitsOnHold.length = 0
 
-    for (const event of onHold) {
-      this.#emit(event)
+    for (const [event, args] of onHold) {
+      this.#emit(event, ...args)
     }
 
     super.resume()
@@ -239,8 +253,8 @@ class Scheduler extends Pausable {
   #addWhenever (whenever) {
     this.#whenevers.add(whenever)
 
-    whenever.on('error', error => {
-      this.emit('error', {
+    whenever.on(EVENT_ERROR, error => {
+      this.emit(EVENT_ERROR, {
         type: 'whenever-error',
         error,
         scheduler: this
@@ -292,10 +306,10 @@ class Scheduler extends Pausable {
       // which will also pause the whenever
       this.pause()
 
-      this.emit('fork')
+      this.emit(EVENT_FORK)
 
       // The sub scheduler has been forked
-      scheduler.emit('forked')
+      scheduler.emit(EVENT_FORKED)
 
       // Resume the sub scheduler and start it
       scheduler.resume()
@@ -312,8 +326,8 @@ class Scheduler extends Pausable {
 
     this.#addWhenever(whenever)
 
-    scheduler.on('error', error => {
-      this.emit('error', error)
+    scheduler.on(EVENT_ERROR, error => {
+      this.emit(EVENT_ERROR, error)
     })
 
     return scheduler
@@ -329,8 +343,8 @@ class Scheduler extends Pausable {
     const whenever = new Whenever(when).then(() => {
       this.#resetActions()
 
-      this.emit('reset')
-      this.emit('idle')
+      this.emit(EVENT_RESET)
+      this.emit(EVENT_IDLE)
 
       whenever.resume()
     })
@@ -399,7 +413,7 @@ class Scheduler extends Pausable {
       try {
         await actions.perform(...this.#args)
       } catch (error) {
-        this.emit('error', {
+        this.emit(EVENT_ERROR, {
           type: 'action-error',
           error,
           scheduler: this
@@ -419,7 +433,7 @@ class Scheduler extends Pausable {
     this.#completePromise = UNDEFINED
 
     // Event 'idle' must be emitted after `resolve()`
-    this.emit('idle')
+    this.emit(EVENT_IDLE)
   }
 
   // Resolves when the scheduler completes all actions

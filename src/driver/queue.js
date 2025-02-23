@@ -2,6 +2,10 @@ const {
   log
 } = require('../util')
 
+const {
+  NOOP
+} = require('../const')
+
 
 class Queue {
   #chain = Promise.resolve()
@@ -12,11 +16,7 @@ class Queue {
 
     this.#chain = result
     // So that the chain is not broken by an error
-    .catch(err => {
-      // TODO:
-      // Log the error to an error log file
-      log('Error in queue', err)
-    })
+    .catch(NOOP)
 
     return result
   }

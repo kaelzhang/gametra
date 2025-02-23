@@ -1,11 +1,13 @@
 const test = require('ava')
-const log = require('util').debuglog('gametra')
+const {inspect} = require('node:util')
+const log = require('node:util').debuglog('gametra')
 
 const {setTimeout} = require('node:timers/promises')
 
 const {
   Action,
-  Scheduler
+  Scheduler,
+  IntervalPerformer
 } = require('..')
 
 
@@ -27,6 +29,9 @@ test('a complex case: pause and resume', async t => {
   .on('idle', add => {
     add(action)
   })
+  .name('main')
+
+  t.is(inspect(scheduler), '[Scheduler: main]')
 
   // Forked
   /////////////////////////////////////////
@@ -161,3 +166,61 @@ test('scheduler reset', async t => {
   scheduler.pause()
 })
 
+
+test('scheduler error', async t => {
+  class ErrorAction extends Action {
+    async _perform () {
+      throw new Error('test')
+    }
+  }
+
+  const scheduler = new Scheduler({
+    master: false
+  })
+  .on('error', payload => {
+    t.is(payload.type, 'action-error')
+    t.is(payload.error.message, 'test')
+  })
+  .on('idle', add => {
+    add(new ErrorAction())
+  })
+
+  scheduler.resume()
+  await scheduler.start()
+})
+
+
+test('scheduler whenever error', async t => {
+  class TestAction extends Action {
+    static Performer = IntervalPerformer
+
+    async _perform () {
+      await setTimeout(100)
+    }
+  }
+
+  const action = new TestAction()
+
+  const scheduler = new Scheduler({
+    master: false
+  })
+  .on('error', payload => {
+    t.is(payload.type, 'whenever-error')
+    t.is(payload.error.message, 'test')
+  })
+  .on('idle', add => {
+    // To make sure the scheduler never pause by itself
+    add(action)
+  })
+
+  scheduler.fork(async () => {
+    await setTimeout(10)
+    throw new Error('test')
+  })
+
+  scheduler.resume()
+  scheduler.start()
+
+  await setTimeout(200)
+  scheduler.pause()
+})
