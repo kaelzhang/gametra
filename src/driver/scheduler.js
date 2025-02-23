@@ -43,7 +43,13 @@ class Whenever extends Pausable {
     while (true) {
       await this.waitPause()
 
-      const yes = await when(...this.#args)
+      let yes = false
+
+      try {
+        yes = await when(...this.#args)
+      } catch (error) {
+        this.emit('error', error)
+      }
 
       // Only if the condition is true,
       // it will go into the then block
@@ -233,6 +239,13 @@ class Scheduler extends Pausable {
   #addWhenever (whenever) {
     this.#whenevers.add(whenever)
 
+    whenever.on('error', error => {
+      this.emit('error', {
+        type: 'whenever-error',
+        error
+      })
+    })
+
     if (this.paused) {
       whenever.pause()
     }
@@ -377,7 +390,16 @@ class Scheduler extends Pausable {
       }
 
       this.#currentActions = actions
-      await actions.perform(...this.#args)
+
+      try {
+        await actions.perform(...this.#args)
+      } catch (error) {
+        this.emit('error', {
+          type: 'action-error',
+          error
+        })
+      }
+
       this.#currentActions = UNDEFINED
     }
 
