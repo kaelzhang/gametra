@@ -10,6 +10,8 @@ const {
   UNDEFINED
 } = require('../const')
 
+const MIN_INTERVAL = 20
+
 class Whenever extends Pausable {
   #when
   #then
@@ -40,8 +42,21 @@ class Whenever extends Pausable {
     const when = this.#when
     const then = this.#then
 
+    let last
+
     while (true) {
       await this.waitPause()
+
+      const now = Date.now()
+
+      if (last) {
+        const wait = MIN_INTERVAL - (now - last)
+        if (wait > 0) {
+          await setTimeout(wait)
+        }
+      }
+
+      last = now
 
       let yes = false
 

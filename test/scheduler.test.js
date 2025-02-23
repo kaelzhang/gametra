@@ -213,14 +213,85 @@ test('scheduler whenever error', async t => {
     add(action)
   })
 
-  scheduler.fork(async () => {
-    await setTimeout(10)
-    throw new Error('test')
-  })
+  class ForkedAction extends Action {
+    async _perform () {
+      await setTimeout(10)
+      throw new Error('test')
+    }
+  }
+
+  const forkedAction = new ForkedAction()
 
   scheduler.resume()
   scheduler.start()
 
+  // Test fork a scheduler after the scheduler is started
+  scheduler.fork(forkedAction)
+
   await setTimeout(200)
+  scheduler.pause()
+})
+
+
+test('forked scheduler error', async t => {
+  const {
+    promise: forkedPromise,
+    resolve: resolveForked
+  } = Promise.withResolvers()
+
+  class ErrorAction extends Action {
+    async _perform () {
+      resolveForked()
+      throw new Error('test')
+    }
+  }
+
+  class IntervalAction extends Action {
+    static Performer = IntervalPerformer
+
+    async _perform () {
+      console.log('interval action')
+      await setTimeout(100)
+    }
+  }
+
+  const intervalAction = new IntervalAction()
+
+  const errorAction = new ErrorAction()
+
+  const scheduler = new Scheduler({
+    master: false
+  })
+  .on('error', payload => {
+    t.is(payload.type, 'action-error')
+    t.is(payload.error.message, 'test')
+    t.is(payload.scheduler, forked)
+  })
+  .on('idle', add => {
+    add(intervalAction)
+  })
+
+  let shouldFork = false
+
+  const forked = scheduler.fork(async () => {
+    const result = shouldFork
+    shouldFork = false
+    return result
+  })
+  .on('forked', add => {
+    add(errorAction)
+  })
+
+  const fork = () => {
+    shouldFork = true
+  }
+
+  fork()
+
+  scheduler.resume()
+  scheduler.start()
+
+  await forkedPromise
+  await setTimeout(100)
   scheduler.pause()
 })

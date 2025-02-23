@@ -87,6 +87,8 @@ test('scheduler pause when forked', async t => {
   const countBeforePause = count
 
   scheduler.pause()
+  scheduler.resume()
+  scheduler.pause()
   waitPromise = null
 
   // Release the waiter
