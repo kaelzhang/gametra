@@ -1,5 +1,5 @@
 [![Build Status](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml/badge.svg)](https://github.com/kaelzhang/gametra/actions/workflows/nodejs.yml)
-[![Coverage](https://codecov.io/gh/kaelzhang/gametra/branch/master/graph/badge.svg)](https://codecov.io/gh/kaelzhang/gametra)
+[![Coverage](https://codecov.io/gh/kaelzhang/gametra/branch/main/graph/badge.svg)](https://codecov.io/gh/kaelzhang/gametra)
 
 > Still in development
 
