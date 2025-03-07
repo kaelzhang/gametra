@@ -10,21 +10,29 @@ const {
   log
 } = require('../util')
 
+
+const DEFAULT_GET_SCREENSHOT = (game, viewport) => game.screenshot(viewport)
+
 class ImageMatcher extends Action {
   #viewport
   #to
   #toPromise
+  #getScreenshot
 
   constructor (
     viewport,
     // The target image buffer to match, could be either
     // - a string path to the image file
     // - string paths to the image files
-    to
+    to,
+    {
+      getScreenshot = DEFAULT_GET_SCREENSHOT
+    } = {}
   ) {
     super()
     this.#viewport = viewport
     this.#to = [].concat(to)
+    this.#getScreenshot = getScreenshot
   }
 
   async #targetImages () {
@@ -43,8 +51,10 @@ class ImageMatcher extends Action {
   }
 
   async _perform (game) {
+    const getScreenshot = this.#getScreenshot
+
     const [viewport, images] = await Promise.all([
-      game.screenshot(this.#viewport),
+      getScreenshot(game, this.#viewport),
       this.#targetImages()
     ])
 

@@ -8,11 +8,13 @@ const {
   IntervalPerformer,
   SharedPerformer
 } = require('./driver/performers')
+const {shared} = require('./driver/tools')
 const {Scheduler} = require('./driver/scheduler')
 
 module.exports = {
   Game,
   Action,
+  shared,
   ThrottledPerformer,
   IntervalPerformer,
   SharedPerformer,
