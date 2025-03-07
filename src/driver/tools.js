@@ -11,6 +11,7 @@ const {
 
 const shared = (fn, {
   throttle = 100,
+  // Disable queueing for atomic tasks by default
   queue = false
 } = {}) => {
   class _SharedAction extends Action {
@@ -24,7 +25,6 @@ const shared = (fn, {
     }
   }
 
-  // Always disable queueing for atomic tasks
   const action = new _SharedAction().queue(queue)
 
   return (...args) => action.perform(...args)
