@@ -12,6 +12,14 @@ const {
 
 const MIN_INTERVAL = 20
 
+const EVENT_CREATED = 'created'
+const EVENT_IDLE = 'idle'
+const EVENT_RESET = 'reset'
+const EVENT_FORK = 'fork'
+const EVENT_FORKED = 'forked'
+const EVENT_ERROR = 'error'
+
+
 class Whenever extends Pausable {
   #when
   #then
@@ -63,7 +71,7 @@ class Whenever extends Pausable {
       try {
         yes = await when(...this.#args)
       } catch (error) {
-        this.emit('error', error)
+        this.emit(EVENT_ERROR, error)
         continue
       }
 
@@ -118,14 +126,6 @@ class ActionGroup {
 const makeWhen = when => when instanceof Action
   ? (...args) => when.perform(...args)
   : when
-
-
-const EVENT_CREATED = 'created'
-const EVENT_IDLE = 'idle'
-const EVENT_RESET = 'reset'
-const EVENT_FORK = 'fork'
-const EVENT_FORKED = 'forked'
-const EVENT_ERROR = 'error'
 
 
 class Scheduler extends Pausable {

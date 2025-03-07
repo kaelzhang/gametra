@@ -57,6 +57,8 @@ const encodeNativeBMPImage = nativeImage => {
   } = nativeImage.getSize()
 
   const image = Jimp.fromBitmap({
+    // Convert BGRA which is the native format of Electron
+    // to RGBA which is required by Jimp and more widely used
     data: BGRAtoRGBA(buffer),
     width,
     height
