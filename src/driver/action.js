@@ -171,21 +171,6 @@ class Action extends Pausable {
 }
 
 
-const createAction = (perform, performer, PERFORMER_OPTIONS) => {
-  class _Action extends Action {
-    static PERFORMER = performer
-    static PERFORMER_OPTIONS = PERFORMER_OPTIONS
-
-    async _perform (...args) {
-      return perform(...args)
-    }
-  }
-
-  return new _Action()
-}
-
-
 module.exports = {
-  Action,
-  createAction
+  Action
 }
