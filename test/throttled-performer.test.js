@@ -17,7 +17,7 @@ class ThrottledPerformer extends OriginalThrottledPerformer {
 
 test('normal action performing', async t => {
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       return 1
@@ -35,7 +35,7 @@ test('throttled action performing', async t => {
   const performTimes = []
 
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       performTimes.push(Date.now())
@@ -69,7 +69,7 @@ test('throttled action cancel', async t => {
   const performTimes = []
 
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       performTimes.push(Date.now())
@@ -89,7 +89,7 @@ test('throttled action pause', async t => {
   const start = Date.now()
 
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       return Date.now() - start
@@ -121,7 +121,7 @@ test('action performs after throttle time', async t => {
   let last = Date.now()
 
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       const now = Date.now()
@@ -148,7 +148,7 @@ test('throttled action options', async t => {
   let count = 0
 
   class TestAction extends Action {
-    static Performer = ThrottledPerformer
+    static PERFORMER = ThrottledPerformer
 
     async _perform () {
       count ++

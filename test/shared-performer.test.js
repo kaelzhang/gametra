@@ -15,7 +15,7 @@ test('performers execution order', async t => {
   let count = 0
 
   class TestAction extends Action {
-    static Performer = [SharedPerformer, ThrottledPerformer]
+    static PERFORMER = [SharedPerformer, ThrottledPerformer]
 
     async _perform () {
       return count ++

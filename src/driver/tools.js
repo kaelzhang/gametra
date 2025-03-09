@@ -15,8 +15,8 @@ const shared = (fn, {
   queue = false
 } = {}) => {
   class _SharedAction extends Action {
-    static Performer = [SharedPerformer, ThrottledPerformer]
-    static performerOptions = {
+    static PERFORMER = [SharedPerformer, ThrottledPerformer]
+    static PERFORMER_OPTIONS = {
       throttle
     }
 

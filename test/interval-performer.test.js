@@ -11,7 +11,7 @@ const {
 
 test('performer already running', async t => {
   class TestAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       return 1
@@ -30,7 +30,7 @@ test('action with performer', async t => {
   const start = Date.now()
 
   class TestAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       return Date.now() - start > 300
@@ -47,7 +47,7 @@ test('test action IntervalPerformer#cancel: will not resolved as true', async t 
   const start = Date.now()
 
   class TestAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       return Date.now() - start > 300
@@ -75,7 +75,7 @@ test('action cancel in before waitphase', async t => {
   const start = Date.now()
 
   class TestAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       await setTimeout(200)

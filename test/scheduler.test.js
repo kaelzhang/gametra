@@ -194,7 +194,7 @@ test('scheduler error', async t => {
 
 test('scheduler whenever error', async t => {
   class TestAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       await setTimeout(100)
@@ -249,7 +249,7 @@ test('forked scheduler error', async t => {
   }
 
   class IntervalAction extends Action {
-    static Performer = IntervalPerformer
+    static PERFORMER = IntervalPerformer
 
     async _perform () {
       await setTimeout(100)

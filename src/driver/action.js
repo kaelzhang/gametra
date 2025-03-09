@@ -119,7 +119,7 @@ class Action extends Pausable {
   // Take the following Action class as an example:
   // ```
   // Class MyAction extends Action {
-  //   static Performer = [PA, PB]
+  //   static PERFORMER = [PA, PB]
   // }
   // ```
   // -> (PA -> (PB -> action))
@@ -131,7 +131,7 @@ class Action extends Pausable {
       return true
     }
 
-    const Performer = this.constructor.Performer
+    const Performer = this.constructor.PERFORMER
     if (!Performer) {
       // No performer is defined
       return false
@@ -141,7 +141,7 @@ class Action extends Pausable {
     const Performers = [].concat(Performer)
 
     const performers = Performers
-    .map(Performer => this.#generatePerformer(Performer))
+    .map(performer => this.#generatePerformer(performer))
     // [PB, PA]
     .reverse()
 
@@ -158,10 +158,10 @@ class Action extends Pausable {
 
   #generatePerformer (Performer) {
     const options = {
-      // Performer class options
+      // PERFORMER class options
       ...(Performer.DEFAULT_OPTIONS || {}),
       // Class options
-      ...(this.constructor.performerOptions || {}),
+      ...(this.constructor.PERFORMER_OPTIONS || {}),
       // Instance options
       ...(this.#performerOptions || {})
     }
@@ -171,10 +171,10 @@ class Action extends Pausable {
 }
 
 
-const createAction = (perform, performer, performerOptions) => {
+const createAction = (perform, performer, PERFORMER_OPTIONS) => {
   class _Action extends Action {
-    static Performer = performer
-    static performerOptions = performerOptions
+    static PERFORMER = performer
+    static PERFORMER_OPTIONS = PERFORMER_OPTIONS
 
     async _perform (...args) {
       return perform(...args)

@@ -28,8 +28,8 @@ test('scheduler pause when forked', async t => {
   } = Promise.withResolvers()
 
   class ActionForForked extends Action {
-    static Performer = IntervalPerformer
-    static performerOptions = {
+    static PERFORMER = IntervalPerformer
+    static PERFORMER_OPTIONS = {
       interval: 10
     }
 
