@@ -1,7 +1,10 @@
 const {Game} = require('./driver/game')
 const {ElectronDelegate} = require('./delegate/electron')
 const {Viewport} = require('./util')
-const {Action} = require('./driver/action')
+const {
+  Action,
+  createAction
+} = require('./driver/action')
 const {ImageMatcher} = require('./driver/matchers')
 const {
   ThrottledPerformer,
@@ -14,6 +17,7 @@ const {Scheduler} = require('./driver/scheduler')
 module.exports = {
   Game,
   Action,
+  createAction,
   shared,
   ThrottledPerformer,
   IntervalPerformer,
