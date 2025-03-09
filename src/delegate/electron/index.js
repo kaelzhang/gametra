@@ -92,14 +92,16 @@ class ElectronDelegate extends EventEmitter {
     this.#resolveReady = resolve
   }
 
-  async updateKVs (updater) {
-    const filepath = join(this.#downloadPath, '.storage.json')
+  #getStoragePath () {
+    return join(this.#downloadPath, '.storage.json')
+  }
 
+  async updateStorage (updater) {
+    const filepath = this.#getStoragePath()
     let storage = {}
 
     try {
-      const content = await fs.readFile(filepath, 'utf-8')
-      storage = JSON.parse(content)
+      storage = await this.getStorage(filepath)
     } catch (error) {
       // ignore
     }
@@ -110,8 +112,13 @@ class ElectronDelegate extends EventEmitter {
     return storage
   }
 
+  async getStorage (filepath = this.#getStoragePath()) {
+    const content = await fs.readFile(filepath, 'utf-8')
+    return JSON.parse(content)
+  }
+
   async #increaseBatchId () {
-    const updated = await this.updateKVs(storage => {
+    const updated = await this.updateStorage(storage => {
       storage.batchId = (storage.batchId || this.#batchId) + 1
       return storage
     })
