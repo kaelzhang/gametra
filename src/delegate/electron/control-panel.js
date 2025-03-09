@@ -6,6 +6,7 @@ let isPickingPixel = false
 let startPos = null
 
 const startBtn = document.getElementById('startBtn')
+const reloadBtn = document.getElementById('reloadBtn')
 const captureBtn = document.getElementById('captureBtn')
 const pixelPickerBtn = document.getElementById('pixelPickerBtn')
 const pixelDisplay = document.getElementById('pixelDisplay')
@@ -38,6 +39,14 @@ const toggleScheduler = (enable = !isAutomating) => {
 
 startBtn.addEventListener('click', () => {
   toggleScheduler()
+})
+
+
+// Reload
+// ------------------------------------------------------------
+
+reloadBtn.addEventListener('click', () => {
+  ipcRenderer.send('reload')
 })
 
 

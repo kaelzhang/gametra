@@ -46,6 +46,10 @@ class Game {
     })
   }
 
+  reload () {
+    this.#delegate.reload()
+  }
+
   viewport (...args) {
     return new Viewport(...args)
   }

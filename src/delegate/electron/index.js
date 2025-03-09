@@ -32,6 +32,7 @@ const getInitialMousePosition = (width, height) => {
   }
 }
 
+
 class ElectronDelegate extends EventEmitter {
   #mainWindow
   #controlPanel
@@ -42,7 +43,7 @@ class ElectronDelegate extends EventEmitter {
   #initialMousePosition
   #readyPromise
   #resolveReady
-  #batchId
+  #batchId = 0
   #x
   #y
 
@@ -91,23 +92,31 @@ class ElectronDelegate extends EventEmitter {
     this.#resolveReady = resolve
   }
 
-  async #increaseBatchId () {
-    const filepath = join(this.#downloadPath, '.batch.json')
+  async updateKVs (updater) {
+    const filepath = join(this.#downloadPath, '.storage.json')
 
-    let batchId
+    let storage = {}
 
     try {
       const content = await fs.readFile(filepath, 'utf-8')
-      batchId = JSON.parse(content.toString()).batchId || 0
+      storage = JSON.parse(content)
     } catch (error) {
-      batchId = 0
+      // ignore
     }
 
-    batchId ++
+    storage = updater(storage)
 
-    await fs.writeFile(filepath, JSON.stringify({batchId}))
+    await fs.writeFile(filepath, JSON.stringify(storage))
+    return storage
+  }
 
-    this.#batchId = batchId
+  async #increaseBatchId () {
+    const updated = await this.updateKVs(storage => {
+      storage.batchId = (storage.batchId || this.#batchId) + 1
+      return storage
+    })
+
+    this.#batchId = updated.batchId
   }
 
   async launch ({
@@ -124,6 +133,12 @@ class ElectronDelegate extends EventEmitter {
       height,
       userAgent
     })
+  }
+
+  reload () {
+    if (this.#mainWindow) {
+      this.#mainWindow.reload()
+    }
   }
 
   async #createWindow ({
@@ -346,6 +361,11 @@ class ElectronDelegate extends EventEmitter {
 
     ipcMain.on('scheduler-stop', () => {
       this.emit('scheduler-stop')
+    })
+
+    ipcMain.on('reload', () => {
+      this.reload()
+      this.emit('reload')
     })
 
     ipcMain.on('custom-event', (event, name, payload) => {
