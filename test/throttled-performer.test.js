@@ -160,6 +160,7 @@ test('throttled action options', async t => {
   action.perform()
   action.perform()
   action.perform()
+  action.perform()
 
   await setTimeout(1)
   t.is(count, 1)
@@ -167,9 +168,9 @@ test('throttled action options', async t => {
   await setTimeout(100)
   t.is(count, 1)
 
-  await setTimeout(250)
+  await setTimeout(150) // + 250
   t.is(count, 2)
 
-  await setTimeout(450)
+  await setTimeout(250) // + 500
   t.is(count, 3)
 })

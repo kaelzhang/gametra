@@ -2,8 +2,7 @@ const {Game} = require('./driver/game')
 const {ElectronDelegate} = require('./delegate/electron')
 const {Viewport} = require('./util')
 const {
-  Action,
-  createAction
+  Action
 } = require('./driver/action')
 const {ImageMatcher} = require('./driver/matchers')
 const {
@@ -11,7 +10,10 @@ const {
   IntervalPerformer,
   SharedPerformer
 } = require('./driver/performers')
-const {shared} = require('./driver/tools')
+const {
+  shared,
+  createAction
+} = require('./driver/tools')
 const {Scheduler} = require('./driver/scheduler')
 
 module.exports = {

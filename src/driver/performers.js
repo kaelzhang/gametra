@@ -10,61 +10,79 @@ const {
 } = require('../const')
 
 
+const LAST_PROCESSED_KEY = Symbol('lastProcessed')
+const DEFAULT_LAST_ACCESSOR = {
+  get () {
+    return this[LAST_PROCESSED_KEY]
+  },
+
+  set (value) {
+    this[LAST_PROCESSED_KEY] = value
+  }
+}
+
 // A performer that prevents an action from performing too frequently
 class ThrottledPerformer extends Pausable {
   #canceled = false
-  #lastProcessed
   #throttlePromise
   #throttle
+  #lastAccessor
 
-  static DEFAULT_OPTIONS = {
-    throttle: 100
-  }
+  // It is unnecessary to define the DEFAULT_OPTIONS for
+  // the original parent class of ThrottledPerformer
 
   constructor ({
-    throttle
+    throttle = 100,
+    lastAccessor = DEFAULT_LAST_ACCESSOR
   }) {
     super()
 
     this.#throttle = throttle
+    this.#lastAccessor = lastAccessor
   }
 
   cancel () {
     this.#canceled = true
   }
 
-  async #wait () {
-    if (this.#throttlePromise) {
+  async #wait (...args) {
+    while (this.#throttlePromise) {
       // It is an async lock
       await this.#throttlePromise
     }
     // Only if the lock is released or not set, then proceed the real checking
 
-    const wait = this.#lastProcessed === UNDEFINED
+    const {promise, resolve} = Promise.withResolvers()
+    this.#throttlePromise = promise
+
+    //////////////////////////////////////////////////////////////////////////
+
+    const last = await this.#lastAccessor.get.call(this, ...args)
+
+    const wait = last === UNDEFINED
       ? 0
-      : this.#throttle - (Date.now() - this.#lastProcessed)
+      : this.#throttle - (Date.now() - last)
 
     if (wait > 0) {
-      const {promise, resolve} = Promise.withResolvers()
-      this.#throttlePromise = promise
-
       await setTimeout(wait)
-
-      // We should update the last processed time before releasing the lock
-      this.#lastProcessed = Date.now()
-
-      resolve()
-      this.#throttlePromise = UNDEFINED
-      return
     }
 
-    this.#lastProcessed = Date.now()
+    await this.#updateLastProcessed(...args)
+
+    //////////////////////////////////////////////////////////////////////////
+
+    resolve()
+    this.#throttlePromise = UNDEFINED
+  }
+
+  async #updateLastProcessed (...args) {
+    return this.#lastAccessor.set.call(this, Date.now(), ...args)
   }
 
   async perform (perform,...args) {
     this.#canceled = false
 
-    await this.#wait()
+    await this.#wait(...args)
 
     if (this.#canceled) {
       return
@@ -85,12 +103,8 @@ class IntervalPerformer extends Pausable {
   #interval
   #running = false
 
-  static DEFAULT_OPTIONS = {
-    interval: 100
-  }
-
   constructor ({
-    interval
+    interval = 100
   }) {
     super()
 
