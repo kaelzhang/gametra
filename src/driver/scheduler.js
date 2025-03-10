@@ -3,7 +3,10 @@ const {
 } = require('node:timers/promises')
 const {inspect} = require('node:util')
 
-const {Action} = require('./action')
+const {
+  Action,
+  ActionGroup
+} = require('./action')
 const {Pausable} = require('../util')
 
 const {
@@ -88,37 +91,6 @@ class Whenever extends Pausable {
         await then()
       }
     }
-  }
-}
-
-
-class ActionGroup {
-  #actions
-
-  constructor (actions) {
-    this.#actions = actions
-  }
-
-  cancel () {
-    this.#apply('cancel')
-  }
-
-  pause () {
-    this.#apply('pause')
-  }
-
-  resume () {
-    this.#apply('resume')
-  }
-
-  #apply (method) {
-    for (const action of this.#actions) {
-      action[method]()
-    }
-  }
-
-  perform (...args) {
-    return Promise.all(this.#actions.map(action => action.perform(...args)))
   }
 }
 
@@ -425,15 +397,15 @@ class Scheduler extends Pausable {
 
       this.#currentActions = actions
 
-      try {
-        await actions.perform(...this.#args)
-      } catch (error) {
-        this.emit(EVENT_ERROR, {
-          type: 'action-error',
-          error,
-          scheduler: this
-        })
-      }
+      await actions.onError(
+        error => {
+          this.emit(EVENT_ERROR, {
+            type: 'action-error',
+            error,
+            scheduler: this
+          })
+        }
+      ).perform(...this.#args)
 
       this.#currentActions = UNDEFINED
     }
