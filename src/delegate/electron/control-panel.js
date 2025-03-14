@@ -7,6 +7,7 @@ let startPos = null
 
 const startBtn = document.getElementById('startBtn')
 const reloadBtn = document.getElementById('reloadBtn')
+const setBotDeviceBtn = document.getElementById('setBotDeviceBtn')
 const captureBtn = document.getElementById('captureBtn')
 const pixelPickerBtn = document.getElementById('pixelPickerBtn')
 const pixelDisplay = document.getElementById('pixelDisplay')
@@ -135,4 +136,9 @@ jumpBtn.addEventListener('click', () => {
     deltaX: jumpDeltaXInput.value,
     deltaY: jumpDeltaYInput.value
   })
+})
+
+
+setBotDeviceBtn.addEventListener('click', () => {
+  ipcRenderer.send('custom-event', 'set-bot-device')
 })
