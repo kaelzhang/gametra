@@ -142,6 +142,14 @@ class ElectronDelegate extends EventEmitter {
     })
   }
 
+  async executeJavaScript (script) {
+    if (!this.#mainWindow) {
+      throw new Error('game instance is not launched')
+    }
+
+    return this.#mainWindow.webContents.executeJavaScript(script)
+  }
+
   reload () {
     if (this.#mainWindow) {
       this.#mainWindow.reload()

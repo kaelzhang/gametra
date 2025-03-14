@@ -46,6 +46,10 @@ class Game {
     })
   }
 
+  async executeJavaScript (script) {
+    return this.#delegate.executeJavaScript(script)
+  }
+
   reload () {
     this.#delegate.reload()
   }
