@@ -139,8 +139,8 @@ window.addEventListener('click', e => {
 window.addEventListener('mousemove', e => {
   if (isCapturing && startPos) {
     updateSelectionOverlay(startPos.x, startPos.y, e.clientX, e.clientY)
-    selectionMask.show()
   }
+
   if (isPickingPixel) {
     ipcRenderer.send('get-pixel', { x: e.clientX, y: e.clientY })
   }
@@ -153,6 +153,8 @@ const toggleCaptureMode = enable => {
     selectionOverlay.hide()
     selectionMask.hide()
     startPos = UNDEFINED
+  } else {
+    selectionMask.show()
   }
 
   // Change cursor to crosshair when in capture mode
