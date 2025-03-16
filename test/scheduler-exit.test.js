@@ -42,6 +42,9 @@ test('scheduler exit', async t => {
   scheduler.resume()
   scheduler.exit(exitAction)
 
+  // Allow to register two exit actions
+  scheduler.exit(exitAction)
+
   scheduler.start()
 
   await scheduler.complete()

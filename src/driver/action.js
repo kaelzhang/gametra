@@ -20,18 +20,10 @@ class Action extends Pausable {
   #performerOptions = {}
 
   #performers
-  #runByPerformers
-  #cancel
+  #performersRunner
+
   #canceled = false
-  #useQueue = true
-
-  constructor ({
-    queue = true
-  } = {}) {
-    super()
-
-    this.#useQueue = queue
-  }
+  #useQueue = false
 
   _perform () {
     throw new NotImplementedError(
@@ -53,16 +45,8 @@ class Action extends Pausable {
   }
 
   queue (queue = true) {
-    if (this.#useQueue === queue) {
-      return this
-    }
-
-    // Or it will return a new action instance with the given queue option
-    return new this.constructor({
-      queue
-    })
-    .partial(...this.#partial)
-    .options(this.#performerOptions)
+    this.#useQueue = queue
+    return this
   }
 
   pause () {
@@ -123,7 +107,7 @@ class Action extends Pausable {
     const argList = this.#getArgs(args)
 
     return this.#initPerformers()
-    ? this.#runByPerformers(...argList)
+    ? this.#performersRunner(...argList)
     : this.#performInQueue(...argList)
   }
 
@@ -170,7 +154,7 @@ class Action extends Pausable {
 
     // Execution order:
     // outside -> PA -> (PB -> action)
-    this.#runByPerformers = performers.reduce((prev, performer) => {
+    this.#performersRunner = performers.reduce((prev, performer) => {
       return (...args) => performer.perform(prev, ...args)
     }, this.#performInQueue.bind(this))
 

@@ -172,7 +172,7 @@ class Scheduler extends Pausable {
   }
 
   pause () {
-    if (this.#forked) {
+    if (this.#forked && this.#forked !== this) {
       // If we call pause() when the current scheduler is forked,
       // actually we want to pause the sub scheduler that it forked into
       this.#forked.pause()
@@ -199,7 +199,7 @@ class Scheduler extends Pausable {
   }
 
   resume () {
-    if (this.#forked) {
+    if (this.#forked && this.#forked !== this) {
       // If the current scheduler is forked,
       // actually we want to resume the sub scheduler that it forked into
       this.#forked.resume()
@@ -371,6 +371,8 @@ class Scheduler extends Pausable {
   }
 
   #doExit () {
+    // There might be multiple exit actions,
+    // we should not resolve it again when it is already resolved
     if (this.#exitResolve) {
       this.#exitResolve()
     }
