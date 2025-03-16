@@ -96,9 +96,14 @@ class Whenever extends Pausable {
 }
 
 
-const makeWhen = when => when instanceof Action
-  ? (...args) => when.perform(...args)
-  : when
+const makeWhen = when => {
+  if (when instanceof Action) {
+    const action = when.queue(false)
+    return (...args) => action.perform(...args)
+  }
+
+  return when
+}
 
 
 class Scheduler extends Pausable {
@@ -395,6 +400,8 @@ class Scheduler extends Pausable {
 
     await promise
     this.#exitResolve = UNDEFINED
+
+    this.emit(EVENT_EXITED)
   }
 
   async start (...args) {
@@ -443,10 +450,6 @@ class Scheduler extends Pausable {
 
     resolve()
     this.#completePromise = UNDEFINED
-
-    if (this.#hasExit) {
-      this.emit(EVENT_EXITED)
-    }
   }
 
   async #processActions () {
@@ -457,8 +460,6 @@ class Scheduler extends Pausable {
 
       if (!actions) {
         this.emit(EVENT_IDLE)
-
-        console.log('no actions', this.#hasExit, this.#exited)
 
         if (this.#hasExit && !this.#exited) {
           continue

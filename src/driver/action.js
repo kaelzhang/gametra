@@ -16,13 +16,22 @@ const GLOBAL_ACTION_QUEUE = new Queue()
 
 
 class Action extends Pausable {
-  #partial
+  #partial = []
+  #performerOptions = {}
+
   #performers
   #runByPerformers
-  #performerOptions
   #cancel
   #canceled = false
   #useQueue = true
+
+  constructor ({
+    queue = true
+  } = {}) {
+    super()
+
+    this.#useQueue = queue
+  }
 
   _perform () {
     throw new NotImplementedError(
@@ -43,9 +52,17 @@ class Action extends Pausable {
     }
   }
 
-  queue (useQueue = true) {
-    this.#useQueue = useQueue
-    return this
+  queue (queue = true) {
+    if (this.#useQueue === queue) {
+      return this
+    }
+
+    // Or it will return a new action instance with the given queue option
+    return new this.constructor({
+      queue
+    })
+    .partial(...this.#partial)
+    .options(this.#performerOptions)
   }
 
   pause () {
@@ -81,7 +98,7 @@ class Action extends Pausable {
   #getArgs (args) {
     this.#checkPartial()
 
-    if (!this.#partial) {
+    if (this.#partial.length === 0) {
       return args
     }
 
@@ -93,7 +110,7 @@ class Action extends Pausable {
       REQUIRED_ARGS = 0
     } = this.constructor
 
-    const {length} = this.#partial || []
+    const {length} = this.#partial
     if (length < REQUIRED_ARGS) {
       throw new Error(
         `${this.constructor.name}.prototype._perform requires ${REQUIRED_ARGS} arguments to be defined in advance by using .partial()`
