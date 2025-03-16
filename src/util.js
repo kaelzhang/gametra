@@ -79,6 +79,16 @@ class NotImplementedError extends Error {
 class Pausable extends EventEmitter {
   #pausePromise
   #pauseResolve
+  #emitsOnHold = []
+
+  emit (...args) {
+    if (this.paused) {
+      this.#emitsOnHold.push(args)
+      return this
+    }
+
+    return super.emit(...args)
+  }
 
   get paused () {
     return !!this.#pausePromise
@@ -99,6 +109,13 @@ class Pausable extends EventEmitter {
   }
 
   resume () {
+    const onHold = [].concat(this.#emitsOnHold)
+    this.#emitsOnHold.length = 0
+
+    for (const args of onHold) {
+      super.emit(...args)
+    }
+
     if (this.#pauseResolve) {
       this.#pauseResolve()
     }

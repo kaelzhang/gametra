@@ -1,5 +1,6 @@
 const {
-  log
+  log,
+  Pausable
 } = require('../util')
 
 const {
@@ -19,6 +20,17 @@ class Queue {
     .catch(NOOP)
 
     return result
+  }
+}
+
+
+class Cargo extends Pausable {
+  #count = 0
+  #processing = new Set()
+  #eventOnHold = []
+
+  add (action) {
+
   }
 }
 

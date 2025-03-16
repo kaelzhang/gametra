@@ -118,7 +118,6 @@ class Scheduler extends Pausable {
   #hasExit = false
   #exited = false
   #exitResolve = UNDEFINED
-  #emitsOnHold = []
   #whenevers = new Set()
   #forked = UNDEFINED
 
@@ -152,15 +151,6 @@ class Scheduler extends Pausable {
   }
 
   emit (event, ...args) {
-    if (this.paused) {
-      this.#emitsOnHold.push([event, args])
-      return
-    }
-
-    this.#emit(event, ...args)
-  }
-
-  #emit (event, ...args) {
     if (event === EVENT_ERROR) {
       super.emit(event, ...args)
       return
@@ -206,14 +196,9 @@ class Scheduler extends Pausable {
       return
     }
 
-    const onHold = [].concat(this.#emitsOnHold)
-    this.#emitsOnHold.length = 0
-
-    for (const [event, args] of onHold) {
-      this.#emit(event, ...args)
-    }
-
+    this.#withinEventHandler = true
     super.resume()
+    this.#withinEventHandler = false
 
     this.#resumeActions()
 
