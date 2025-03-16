@@ -18,6 +18,7 @@ const MIN_INTERVAL = 20
 const EVENT_CREATED = 'created'
 const EVENT_IDLE = 'idle'
 const EVENT_RESET = 'reset'
+const EVENT_EXITED = 'exited'
 const EVENT_FORK = 'fork'
 const EVENT_FORKED = 'forked'
 const EVENT_ERROR = 'error'
@@ -109,6 +110,9 @@ class Scheduler extends Pausable {
   #args
   #withinEventHandler = false
   #started = false
+  #hasExit = false
+  #exited = false
+  #exitResolve = UNDEFINED
   #emitsOnHold = []
   #whenevers = new Set()
   #forked = UNDEFINED
@@ -355,6 +359,44 @@ class Scheduler extends Pausable {
     this.#actions.length = 0
   }
 
+  exit (when) {
+    this.#hasExit = true
+    this.#registerExit(makeWhen(when))
+    return this
+  }
+
+  #doExit () {
+    if (this.#exitResolve) {
+      this.#exitResolve()
+    }
+  }
+
+  // Restart the scheduler,
+  // clean all actions, and emit the idle event
+  #registerExit (when) {
+    const whenever = new Whenever(when).then(() => {
+      this.#exited = true
+      this.#resetActions()
+      this.#doExit()
+
+      whenever.resume()
+    })
+
+    this.#addWhenever(whenever)
+  }
+
+  async #waitExit () {
+    if (!this.#hasExit) {
+      return
+    }
+
+    const {promise, resolve} = Promise.withResolvers()
+    this.#exitResolve = resolve
+
+    await promise
+    this.#exitResolve = UNDEFINED
+  }
+
   async start (...args) {
     if (this.#master && this.#started) {
       throw new Error(
@@ -386,13 +428,43 @@ class Scheduler extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#completePromise = promise
 
+    this.#exited = false
+
+    await Promise.all([
+      this.#processActions(),
+      this.#waitExit()
+    ])
+
+    if (!this.#master) {
+      // If it is not the master scheduler,
+      // pause it when the actions are drained
+      this.pause()
+    }
+
+    resolve()
+    this.#completePromise = UNDEFINED
+
+    if (this.#hasExit) {
+      this.emit(EVENT_EXITED)
+    }
+  }
+
+  async #processActions () {
     while (this.#started) {
       await this.waitPause()
 
       const actions = this.#actions.shift()
 
       if (!actions) {
-        break
+        this.emit(EVENT_IDLE)
+
+        console.log('no actions', this.#hasExit, this.#exited)
+
+        if (this.#hasExit && !this.#exited) {
+          continue
+        } else {
+          break
+        }
       }
 
       this.#currentActions = actions
@@ -409,18 +481,6 @@ class Scheduler extends Pausable {
 
       this.#currentActions = UNDEFINED
     }
-
-    if (!this.#master) {
-      // If it is not the master scheduler,
-      // pause it when the actions are drained
-      this.pause()
-    }
-
-    resolve()
-    this.#completePromise = UNDEFINED
-
-    // Event 'idle' must be emitted after `resolve()`
-    this.emit(EVENT_IDLE)
   }
 
   // Resolves when the scheduler completes all actions
