@@ -24,7 +24,8 @@ const DEFAULT_LAST_ACCESSOR = {
 
 const THROTTLE_TYPE = {
   IGNORE: 'ignore',
-  QUEUE: 'queue'
+  QUEUE: 'queue',
+  CACHE: 'cache'
 }
 
 // A performer that prevents an action from performing too frequently
@@ -32,8 +33,9 @@ class ThrottledPerformer extends Pausable {
   #canceled = false
   #throttlePromise
   #throttle
-  #type
+  #mode
   #lastAccessor
+  #lastResult
 
   // It is unnecessary to define the DEFAULT_OPTIONS for
   // the original parent class of ThrottledPerformer
@@ -46,7 +48,7 @@ class ThrottledPerformer extends Pausable {
     super()
 
     this.#throttle = throttle
-    this.#mode = throttleType
+    this.#mode = throttleMode
     this.#lastAccessor = throttleLastAccessor
   }
 
@@ -79,22 +81,21 @@ class ThrottledPerformer extends Pausable {
       ? 0
       : this.#throttle - (Date.now() - last)
 
-    if (this.#mode === THROTTLE_TYPE.IGNORE) {
+    if (this.#mode === THROTTLE_TYPE.QUEUE) {
       if (wait > 0) {
-        // Just ignore the action
-        return true
+        await setTimeout(wait)
       }
 
-      // Otherwise, the action should be performed
       await this.#updateLastProcessed(...args)
       return false
     }
 
-
     if (wait > 0) {
-      await setTimeout(wait)
+      // Just ignore the action
+      return true
     }
 
+    // Otherwise, the action should be performed
     await this.#updateLastProcessed(...args)
     return false
   }
@@ -109,6 +110,10 @@ class ThrottledPerformer extends Pausable {
     const ignore = await this.#wait(...args)
 
     if (ignore) {
+      if (this.#mode === THROTTLE_TYPE.CACHE) {
+        return this.#lastResult
+      }
+
       return
     }
 
@@ -118,7 +123,9 @@ class ThrottledPerformer extends Pausable {
 
     await this.waitPause()
 
-    return perform(...args)
+    const result = await perform(...args)
+    this.#lastResult = result
+    return result
   }
 }
 
