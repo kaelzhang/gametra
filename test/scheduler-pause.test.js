@@ -100,3 +100,39 @@ test('scheduler pause when forked', async t => {
 
   t.is(count, countBeforePause)
 })
+
+
+test('scheduler pause with action performers', async t => {
+  let count = 0
+
+  class TestAction extends Action {
+    static PERFORMER = IntervalPerformer
+    static PERFORMER_OPTIONS = {
+      interval: 50
+    }
+
+    async _perform () {
+      count ++
+    }
+  }
+
+  const action = new TestAction().queue(true)
+
+  const scheduler = new Scheduler()
+  .on('idle', add => {
+    add(action)
+  })
+
+  scheduler.resume()
+  scheduler.start()
+
+  await setTimeout(100)
+  scheduler.pause()
+
+  await setTimeout(50)
+  const current = count
+
+  await setTimeout(200)
+
+  t.is(count, current)
+})
