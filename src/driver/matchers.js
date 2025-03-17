@@ -13,11 +13,18 @@ const {
 
 const DEFAULT_GET_SCREENSHOT = (game, viewport) => game.screenshot(viewport)
 
+const DEFAULT_COMPARE = (from, to) => {
+  const {mssim} = ssim(from, to)
+  return mssim
+}
+
+
 class ImageMatcher extends Action {
   #viewport
   #to
   #toPromise
   #getScreenshot
+  #compare
 
   constructor (
     viewport,
@@ -26,13 +33,15 @@ class ImageMatcher extends Action {
     // - string paths to the image files
     to,
     {
-      getScreenshot = DEFAULT_GET_SCREENSHOT
+      getScreenshot = DEFAULT_GET_SCREENSHOT,
+      compare = DEFAULT_COMPARE
     } = {}
   ) {
     super()
     this.#viewport = viewport
     this.#to = [].concat(to)
     this.#getScreenshot = getScreenshot
+    this.#compare = compare
   }
 
   async #targetImages () {
@@ -58,18 +67,13 @@ class ImageMatcher extends Action {
       this.#targetImages()
     ])
 
-    const similarities = await Promise.all(
-      images.map(image => this.#compare(viewport.bitmap, image.bitmap))
+    const similarities = images.map(
+      image => this.#compare(viewport.bitmap, image.bitmap)
     )
 
     log('image matcher similarities', similarities)
 
     return similarities
-  }
-
-  #compare (from, to) {
-    const {mssim} = ssim(from, to)
-    return mssim
   }
 }
 
