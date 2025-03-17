@@ -27,13 +27,32 @@ class Queue {
 class Cargo extends Pausable {
   #count = 0
   #processing = new Set()
-  #eventOnHold = []
+  #args = []
+
+  perform (args) {
+    this.#args = args
+  }
 
   add (action) {
+    this.#processing.add(action)
+
+    action.perform(...this.#args).then(
+      () => {
+        this.#processing.delete(action)
+      },
+      error => {
+
+      }
+    )
+  }
+
+  async complete () {
 
   }
 }
 
+
 module.exports = {
-  Queue
+  Queue,
+  Cargo
 }

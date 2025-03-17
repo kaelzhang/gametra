@@ -21,11 +21,18 @@ const DEFAULT_LAST_ACCESSOR = {
   }
 }
 
+
+const THROTTLE_TYPE = {
+  IGNORE: 'ignore',
+  QUEUE: 'queue'
+}
+
 // A performer that prevents an action from performing too frequently
 class ThrottledPerformer extends Pausable {
   #canceled = false
   #throttlePromise
   #throttle
+  #type
   #lastAccessor
 
   // It is unnecessary to define the DEFAULT_OPTIONS for
@@ -33,12 +40,14 @@ class ThrottledPerformer extends Pausable {
 
   constructor ({
     throttle = 100,
-    lastAccessor = DEFAULT_LAST_ACCESSOR
+    throttleMode = THROTTLE_TYPE.QUEUE,
+    throttleLastAccessor = DEFAULT_LAST_ACCESSOR
   }) {
     super()
 
     this.#throttle = throttle
-    this.#lastAccessor = lastAccessor
+    this.#mode = throttleType
+    this.#lastAccessor = throttleLastAccessor
   }
 
   cancel () {
@@ -55,24 +64,39 @@ class ThrottledPerformer extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#throttlePromise = promise
 
-    //////////////////////////////////////////////////////////////////////////
+    const ignore = await this.#doWait(...args)
 
+    resolve()
+    this.#throttlePromise = UNDEFINED
+
+    return ignore
+  }
+
+  async #doWait (...args) {
     const last = await this.#lastAccessor.get.call(this, ...args)
 
     const wait = last === UNDEFINED
       ? 0
       : this.#throttle - (Date.now() - last)
 
+    if (this.#mode === THROTTLE_TYPE.IGNORE) {
+      if (wait > 0) {
+        // Just ignore the action
+        return true
+      }
+
+      // Otherwise, the action should be performed
+      await this.#updateLastProcessed(...args)
+      return false
+    }
+
+
     if (wait > 0) {
       await setTimeout(wait)
     }
 
     await this.#updateLastProcessed(...args)
-
-    //////////////////////////////////////////////////////////////////////////
-
-    resolve()
-    this.#throttlePromise = UNDEFINED
+    return false
   }
 
   async #updateLastProcessed (...args) {
@@ -82,7 +106,11 @@ class ThrottledPerformer extends Pausable {
   async perform (perform,...args) {
     this.#canceled = false
 
-    await this.#wait(...args)
+    const ignore = await this.#wait(...args)
+
+    if (ignore) {
+      return
+    }
 
     if (this.#canceled) {
       return
