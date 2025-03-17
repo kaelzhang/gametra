@@ -174,3 +174,59 @@ test('throttled action options', async t => {
   await setTimeout(250) // + 500
   t.is(count, 3)
 })
+
+
+test('mode', async t => {
+  let count = 0
+
+  class TestAction extends Action {
+    static PERFORMER = ThrottledPerformer
+
+    async _perform () {
+      count ++
+      return 1
+    }
+  }
+
+  const action = new TestAction().options({
+    throttle: 200,
+    throttleMode: 'ignore'
+  })
+
+  const result = await Promise.all([
+    action.perform(),
+    action.perform(),
+    action.perform()
+  ])
+
+  t.is(count, 1)
+  t.deepEqual(result, [1, undefined, undefined])
+
+  const action2 = new TestAction().options({
+    throttle: 200,
+    throttleMode: 'cache'
+  })
+
+  const result2 = await Promise.all([
+    action2.perform(),
+    action2.perform(),
+    action2.perform()
+  ])
+
+  t.is(count, 2)
+  t.deepEqual(result2, [1, 1, 1])
+
+  const action3 = new TestAction().options({
+    throttle: 200,
+    throttleMode: 'queue'
+  })
+
+  const result3 = await Promise.all([
+    action3.perform(),
+    action3.perform(),
+    action3.perform()
+  ])
+
+  t.is(count, 5)
+  t.deepEqual(result3, [1, 1, 1])
+})
