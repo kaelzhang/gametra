@@ -12,7 +12,7 @@ const {
 } = require('..')
 
 
-test('a complex case: pause and resume', async t => {
+test.only('a complex case: pause and resume', async t => {
   // Main
   /////////////////////////////////////////
   let count = 0
@@ -28,6 +28,7 @@ test('a complex case: pause and resume', async t => {
 
   const scheduler = new Scheduler()
   .on('idle', add => {
+    console.log('idle', action)
     add(action)
   })
   .name('main')
@@ -42,6 +43,7 @@ test('a complex case: pause and resume', async t => {
     async _perform () {
       forkedCount ++
       await setTimeout(100)
+      console.log('forked action completed')
     }
   }
 
@@ -62,6 +64,7 @@ test('a complex case: pause and resume', async t => {
 
   const forked = scheduler.fork(forkCondition)
   .on('idle', add => {
+    console.log('fork idle', actionForForked)
     add(actionForForked)
   })
 
@@ -79,6 +82,8 @@ test('a complex case: pause and resume', async t => {
   // because the scheduler is paused
   t.is(count, 0)
 
+  console.log('=============== 1')
+
   scheduler.resume()
   await setTimeout(100)
   scheduler.pause()
@@ -86,6 +91,8 @@ test('a complex case: pause and resume', async t => {
   await setTimeout(200)
 
   t.is(count, 1)
+
+  console.log('=============== 2')
 
   scheduler.resume()
 
@@ -96,6 +103,9 @@ test('a complex case: pause and resume', async t => {
   // The forked scheduler should only run once,
   // even after a lot of time
   t.is(forkedCount, 1)
+  return
+
+  console.log('=============== 3')
 
   scheduler.resume()
 

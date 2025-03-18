@@ -3,7 +3,10 @@ const log = require('node:util').debuglog('gametra')
 
 const {Jimp} = require('jimp')
 
-const {UNDEFINED} = require('./const')
+const {
+  UNDEFINED,
+  EVENT_PAUSED
+} = require('./const')
 
 
 class Viewport {
@@ -84,7 +87,7 @@ class Pausable extends EventEmitter {
   emit (...args) {
     if (this.paused) {
       this.#emitsOnHold.push(args)
-      return this
+      return false
     }
 
     return super.emit(...args)
@@ -103,6 +106,9 @@ class Pausable extends EventEmitter {
     }
 
     const {promise, resolve} = Promise.withResolvers()
+
+    // We should emit the event before assigning this.#pausePromise
+    this.emit(EVENT_PAUSED)
 
     this.#pausePromise = promise
     this.#pauseResolve = resolve

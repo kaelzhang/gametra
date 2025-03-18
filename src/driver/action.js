@@ -106,6 +106,8 @@ class Action extends Pausable {
     this.#canceled = false
     const argList = this.#getArgs(args)
 
+    await this.waitPause()
+
     return this.#initPerformers()
     ? this.#performersRunner(...argList)
     : this.#performInQueue(...argList)
@@ -114,7 +116,7 @@ class Action extends Pausable {
   #performInQueue (...args) {
     return this.#useQueue
     // `_perform` is the smallest and atomic unit of action,
-    // so it is always performed in the queue.
+    // so it could be performed in the queue.
     // Also, `Queue` has an internal error handling mechanism
     ? GLOBAL_ACTION_QUEUE.add(() => this._perform(...args))
     // Unless we explicitly set `useQueue` to false.
@@ -176,55 +178,6 @@ class Action extends Pausable {
 }
 
 
-// ActionGroup is a group container of actions,
-// - it will handles the error of the actions
-// - it will not interrupt the other actions if one of the actions failed
-// - only exits when all actions are done or failed
-class ActionGroup {
-  #actions
-  #onError = NOOP
-
-  constructor (actions) {
-    this.#actions = actions
-  }
-
-  cancel () {
-    this.#apply('cancel')
-  }
-
-  pause () {
-    this.#apply('pause')
-  }
-
-  resume () {
-    this.#apply('resume')
-  }
-
-  #apply (method) {
-    for (const action of this.#actions) {
-      action[method]()
-    }
-  }
-
-  onError (fn) {
-    this.#onError = fn
-    return this
-  }
-
-  perform (...args) {
-    const onError = this.#onError
-    this.#onError = NOOP
-
-    return Promise.all(
-      this.#actions.map(
-        action => action.perform(...args).catch(onError)
-      )
-    )
-  }
-}
-
-
 module.exports = {
-  Action,
-  ActionGroup
+  Action
 }

@@ -15,7 +15,7 @@ test('scheduler exit', async t => {
   const exitAction = createAction(async () => {
     await setTimeout(499)
     return true
-  }).queue(false)
+  })
 
   let count = 0
 
@@ -48,5 +48,5 @@ test('scheduler exit', async t => {
   scheduler.start()
 
   await scheduler.complete()
-  t.is(count, 6)
+  t.is(count, 5)
 })

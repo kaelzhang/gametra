@@ -1,5 +1,6 @@
 const {
-  setTimeout
+  setTimeout,
+  setImmediate
 } = require('node:timers/promises')
 const {inspect} = require('node:util')
 
@@ -8,6 +9,7 @@ const {
   ActionGroup
 } = require('./action')
 const {Pausable} = require('../util')
+const {Cargo} = require('./cargo')
 
 const {
   UNDEFINED,
@@ -17,7 +19,10 @@ const {
   EVENT_EXITED,
   EVENT_FORK,
   EVENT_FORKED,
-  EVENT_ERROR
+  EVENT_ERROR,
+  EVENT_DRAINING,
+  EVENT_DRAINED,
+  EVENT_PAUSED
 } = require('../const')
 
 const MIN_INTERVAL = 20
@@ -108,15 +113,15 @@ const makeWhen = when => {
 class Scheduler extends Pausable {
   #master
   #name
-  #actions = []
+  #cargo
   #completePromise
-  #currentActions
   #args
   #withinEventHandler = false
   #started = false
   #hasExit = false
   #exited = false
   #exitResolve = UNDEFINED
+  #cargoResolve = UNDEFINED
   #whenevers = new Set()
   #forked = UNDEFINED
 
@@ -124,6 +129,15 @@ class Scheduler extends Pausable {
     master = true
   } = {}) {
     super()
+
+    this.#cargo = new Cargo()
+    .onError(error => {
+      this.emit(EVENT_ERROR, {
+        type: 'action-error',
+        error,
+        scheduler: this
+      })
+    })
 
     this.#master = master
 
@@ -151,13 +165,14 @@ class Scheduler extends Pausable {
 
   emit (event, ...args) {
     if (event === EVENT_ERROR) {
-      super.emit(event, ...args)
-      return
+      return super.emit(event, ...args)
     }
 
     this.#withinEventHandler = true
-    super.emit(event, this.add.bind(this), ...args)
+    const ret = super.emit(event, this.add.bind(this), ...args)
     this.#withinEventHandler = false
+
+    return ret
   }
 
   pause () {
@@ -171,20 +186,9 @@ class Scheduler extends Pausable {
 
     this.#pauseMonitors()
 
-    if (this.#currentActions) {
-      this.#currentActions.pause()
-    }
-
-    // Pause all actions, including the current one
-    this.#pauseActions()
+    this.#cargo.pause()
 
     super.pause()
-  }
-
-  #pauseActions () {
-    for (const action of this.#actions) {
-      action.pause()
-    }
   }
 
   resume () {
@@ -199,19 +203,9 @@ class Scheduler extends Pausable {
     super.resume()
     this.#withinEventHandler = false
 
-    this.#resumeActions()
-
-    if (this.#currentActions) {
-      this.#currentActions.resume()
-    }
+    this.#cargo.resume()
 
     this.#resumeMonitors()
-  }
-
-  #resumeActions () {
-    for (const action of this.#actions) {
-      action.resume()
-    }
   }
 
   add (...actions) {
@@ -221,10 +215,11 @@ class Scheduler extends Pausable {
       throw new Error('You should not add actions outside of an event handler')
     }
 
-    this.#actions.push(new ActionGroup(actions))
+    this.#cargo.add(...actions)
 
     // Already initialized
     if (this.#master && this.#args) {
+      console.log(this, 'auto #start for master')
       // Then try to start the master scheduler again
       this.#start()
     }
@@ -282,6 +277,8 @@ class Scheduler extends Pausable {
     })
   ) {
     const whenever = new Whenever(when).then(async () => {
+      console.log('fork')
+
       // Pause the parent scheduler,
       // which will also pause the whenever
       this.pause()
@@ -306,8 +303,8 @@ class Scheduler extends Pausable {
 
     this.#addWhenever(whenever)
 
-    scheduler.on(EVENT_ERROR, error => {
-      this.emit(EVENT_ERROR, error)
+    scheduler.on(EVENT_ERROR, errorInfo => {
+      this.emit(EVENT_ERROR, errorInfo)
     })
 
     return scheduler
@@ -321,7 +318,7 @@ class Scheduler extends Pausable {
   // clean all actions, and emit the idle event
   #reset (when) {
     const whenever = new Whenever(when).then(() => {
-      this.#resetActions()
+      this.#cargo.reset()
 
       this.emit(EVENT_RESET)
       this.emit(EVENT_IDLE)
@@ -334,21 +331,11 @@ class Scheduler extends Pausable {
     return this
   }
 
-  #resetActions () {
-    if (this.#currentActions) {
-      this.#currentActions.cancel()
-      this.#currentActions = UNDEFINED
-    }
-
-    // Cancel all actions
-    for (const action of this.#actions) {
-      action.cancel()
-    }
-
-    this.#actions.length = 0
-  }
-
   exit (when) {
+    if (this.#master) {
+      throw new Error('The master scheduler should not exit')
+    }
+
     this.#hasExit = true
     this.#registerExit(makeWhen(when))
     return this
@@ -367,7 +354,8 @@ class Scheduler extends Pausable {
   #registerExit (when) {
     const whenever = new Whenever(when).then(() => {
       this.#exited = true
-      this.#resetActions()
+      this.#cargo.reset()
+      this.#releaseCargo()
       this.#doExit()
 
       whenever.resume()
@@ -402,6 +390,7 @@ class Scheduler extends Pausable {
       this.#initEvents()
       this.#started = true
       this.#args = args
+      this.#cargo.args(args)
       this.#startMonitors()
     }
 
@@ -424,7 +413,7 @@ class Scheduler extends Pausable {
     this.#exited = false
 
     await Promise.all([
-      this.#processActions(),
+      this.#startCargo(),
       this.#waitExit()
     ])
 
@@ -436,37 +425,40 @@ class Scheduler extends Pausable {
 
     resolve()
     this.#completePromise = UNDEFINED
+
+    console.log(this, '#start completed')
   }
 
-  async #processActions () {
-    while (this.#started) {
-      await this.waitPause()
+  // Master
+  //
 
-      const actions = this.#actions.shift()
+  async #startCargo () {
+    const {promise, resolve} = Promise.withResolvers()
+    this.#cargoResolve = resolve
 
-      if (!actions) {
-        this.emit(EVENT_IDLE)
+    const onDrained = async () => {
+      this.emit(EVENT_IDLE)
 
-        if (this.#hasExit && !this.#exited) {
-          continue
-        } else {
-          break
-        }
+      console.log(this, 'cargo drained', this.#hasExit && !this.#exited, this.paused)
+      if (this.#hasExit && !this.#exited) {
+        return
       }
 
-      this.#currentActions = actions
+      this.#cargo.pause()
+      this.#cargo.removeListener(EVENT_DRAINED, onDrained)
+      this.#releaseCargo()
+    }
 
-      await actions.onError(
-        error => {
-          this.emit(EVENT_ERROR, {
-            type: 'action-error',
-            error,
-            scheduler: this
-          })
-        }
-      ).perform(...this.#args)
+    this.#cargo
+    .on(EVENT_DRAINED, onDrained)
 
-      this.#currentActions = UNDEFINED
+    return promise
+  }
+
+  #releaseCargo () {
+    if (this.#cargoResolve) {
+      this.#cargoResolve()
+      this.#cargoResolve = UNDEFINED
     }
   }
 
