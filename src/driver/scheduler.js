@@ -10,18 +10,17 @@ const {
 const {Pausable} = require('../util')
 
 const {
-  UNDEFINED
+  UNDEFINED,
+  EVENT_CREATED,
+  EVENT_IDLE,
+  EVENT_RESET,
+  EVENT_EXITED,
+  EVENT_FORK,
+  EVENT_FORKED,
+  EVENT_ERROR
 } = require('../const')
 
 const MIN_INTERVAL = 20
-
-const EVENT_CREATED = 'created'
-const EVENT_IDLE = 'idle'
-const EVENT_RESET = 'reset'
-const EVENT_EXITED = 'exited'
-const EVENT_FORK = 'fork'
-const EVENT_FORKED = 'forked'
-const EVENT_ERROR = 'error'
 
 
 class Whenever extends Pausable {

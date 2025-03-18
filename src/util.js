@@ -95,7 +95,7 @@ class Pausable extends EventEmitter {
   }
 
   pause () {
-    if (this.#pausePromise) {
+    if (this.paused) {
       // Already paused. Skip.
       // We should never pause again,
       // or the promise created previously will never be resolved
@@ -109,6 +109,11 @@ class Pausable extends EventEmitter {
   }
 
   resume () {
+    if (!this.paused) {
+      // Already resumed. Skip.
+      return
+    }
+
     const onHold = [].concat(this.#emitsOnHold)
     this.#emitsOnHold.length = 0
 

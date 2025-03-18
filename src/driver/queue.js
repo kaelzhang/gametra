@@ -4,7 +4,9 @@ const {
 } = require('../util')
 
 const {
-  NOOP
+  NOOP,
+  EVENT_ERROR,
+  EVENT_DRAINED
 } = require('../const')
 
 
@@ -29,25 +31,32 @@ class Cargo extends Pausable {
   #processing = new Set()
   #args = []
 
-  perform (args) {
+  args (args) {
     this.#args = args
   }
 
   add (action) {
     this.#processing.add(action)
 
-    action.perform(...this.#args).then(
-      () => {
+    const promise = action.perform(...this.#args)
+
+    promise.then(
+      result => {
         this.#processing.delete(action)
+        this.#check()
       },
       error => {
-
+        this.emit(EVENT_ERROR, error)
       }
     )
+
+    return promise
   }
 
-  async complete () {
-
+  #check () {
+    if (this.#processing.size === 0) {
+      this.emit(EVENT_DRAINED)
+    }
   }
 }
 
