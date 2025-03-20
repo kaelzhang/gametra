@@ -1,4 +1,5 @@
 const {
+  UNDEFINED,
   EVENT_ERROR,
   EVENT_PAUSED
 } = require('../constants')
@@ -30,14 +31,19 @@ class Pausable {
   }
 
   removeAllListeners (event) {
-    this.#getListeners(event).length = 0
+    if (event === UNDEFINED) {
+      this.#listeners = {}
+    } else {
+      this.#getListeners(event).length = 0
+    }
+
     return this
   }
 
-  async emit (...args) {
+  async emit (event, ...args) {
     await this.waitPause()
 
-    const listeners = this.#getListeners(args[0])
+    const listeners = this.#getListeners(event)
 
     await Promise.all(
       listeners.map(async fn => {
@@ -82,9 +88,7 @@ class Pausable {
       return
     }
 
-    if (this.#pauseResolve) {
-      this.#pauseResolve()
-    }
+    this.#pauseResolve()
 
     this.#pausePromise = UNDEFINED
     this.#pauseResolve = UNDEFINED
