@@ -13,14 +13,14 @@ const {Cargo} = require('./cargo')
 
 const {
   UNDEFINED,
-  EVENT_CREATED,
+  EVENT_START,
   EVENT_IDLE,
-  EVENT_RESET,
-  EVENT_EXITED,
+  // EVENT_RESET,
+  EVENT_EXIT,
   EVENT_FORK,
-  EVENT_FORKED,
+  // EVENT_FORKED,
   EVENT_ERROR,
-  EVENT_DRAINING,
+  // EVENT_DRAINING,
   EVENT_DRAINED,
   EVENT_PAUSED
 } = require('../constants')
@@ -135,7 +135,7 @@ class Scheduler extends Pausable {
       this.emit(EVENT_ERROR, {
         type: 'action-error',
         error,
-        scheduler: this
+        host: this
       })
     })
 
@@ -159,7 +159,7 @@ class Scheduler extends Pausable {
   }
 
   #initEvents () {
-    this.emit(EVENT_CREATED)
+    this.emit(EVENT_START)
     this.emit(EVENT_IDLE)
   }
 
@@ -277,16 +277,11 @@ class Scheduler extends Pausable {
     })
   ) {
     const whenever = new Whenever(when).then(async () => {
-      console.log('fork')
-
       // Pause the parent scheduler,
       // which will also pause the whenever
       this.pause()
 
-      this.emit(EVENT_FORK)
-
-      // The sub scheduler has been forked
-      scheduler.emit(EVENT_FORKED)
+      await this.emit(EVENT_FORK)
 
       // Resume the sub scheduler and start it
       scheduler.resume()
@@ -310,26 +305,26 @@ class Scheduler extends Pausable {
     return scheduler
   }
 
-  reset (when) {
-    return this.#reset(makeWhen(when))
-  }
+  // reset (when) {
+  //   return this.#reset(makeWhen(when))
+  // }
 
-  // Restart the scheduler,
-  // clean all actions, and emit the idle event
-  #reset (when) {
-    const whenever = new Whenever(when).then(() => {
-      this.#cargo.reset()
+  // // Restart the scheduler,
+  // // clean all actions, and emit the idle event
+  // #reset (when) {
+  //   const whenever = new Whenever(when).then(() => {
+  //     this.#cargo.reset()
 
-      this.emit(EVENT_RESET)
-      this.emit(EVENT_IDLE)
+  //     this.emit(EVENT_RESET)
+  //     this.emit(EVENT_IDLE)
 
-      whenever.resume()
-    })
+  //     whenever.resume()
+  //   })
 
-    this.#addWhenever(whenever)
+  //   this.#addWhenever(whenever)
 
-    return this
-  }
+  //   return this
+  // }
 
   exit (when) {
     if (this.#master) {
@@ -375,7 +370,7 @@ class Scheduler extends Pausable {
     await promise
     this.#exitResolve = UNDEFINED
 
-    this.emit(EVENT_EXITED)
+    await this.emit(EVENT_EXIT)
   }
 
   async start (...args) {

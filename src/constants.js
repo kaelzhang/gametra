@@ -6,17 +6,27 @@ const BUTTON_LEFT = 'left'
 
 function NOOP () {}
 
-const EVENT_CREATED = 'created'
-const EVENT_IDLE = 'idle'
-const EVENT_RESET = 'reset'
-const EVENT_EXITED = 'exited'
-const EVENT_FORK = 'fork'
-const EVENT_FORKED = 'forked'
-const EVENT_ERROR = 'error'
-const EVENT_DRAINED = 'drained'
+// When the scheduler is about to start
+const EVENT_START = 'start'
 
+// When the scheduler is idle
+const EVENT_IDLE = 'idle'
+// const EVENT_RESET = 'reset'
+
+// When the scheduler is about to exit (before exiting)
+const EVENT_EXIT = 'exit'
+
+// When the scheduler forks, before the forked scheduler is started
+const EVENT_FORK = 'fork'
+// const EVENT_FORKED = 'forked'
+
+const EVENT_ERROR = 'error'
+
+///////////////////////////////////////////////////////////////
 // For internal use only
+const EVENT_DRAINED = Symbol('drained')
 const EVENT_PAUSED = Symbol('paused')
+///////////////////////////////////////////////////////////////
 
 
 module.exports = {
@@ -24,12 +34,13 @@ module.exports = {
   UNDEFINED,
   BUTTON_LEFT,
   NOOP,
-  EVENT_CREATED,
+
+  EVENT_START,
   EVENT_IDLE,
-  EVENT_RESET,
-  EVENT_EXITED,
+  // EVENT_RESET,
+  EVENT_EXIT,
   EVENT_FORK,
-  EVENT_FORKED,
+  // EVENT_FORKED,
   EVENT_ERROR,
   EVENT_DRAINED,
   EVENT_PAUSED

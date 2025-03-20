@@ -5,7 +5,7 @@ const {
   setTimeout
 } = require('node:timers/promises')
 
-const {Pausable} = require('../src/driver/events')
+const {Pausable} = require('../src/driver/pausable')
 
 
 test('pausable', async t => {

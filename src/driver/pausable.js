@@ -40,7 +40,32 @@ class Pausable {
     return this
   }
 
-  async emit (event, ...args) {
+  // ```
+  // this.emit('error', {error})
+  // ```
+  emit (event, ...args) {
+    if (event === EVENT_ERROR) {
+      return this.#emitError(...args)
+    }
+
+    return this.#emitAsync(event, ...args)
+  }
+
+  #emitError (errorInfo) {
+    const listeners = this.#getListeners(EVENT_ERROR)
+    const arg = {
+      ...errorInfo,
+      host: this
+    }
+
+    listeners.forEach(fn => {
+      fn(arg)
+    })
+
+    return !!listeners.length
+  }
+
+  async #emitAsync (event, ...args) {
     await this.waitPause()
 
     const listeners = this.#getListeners(event)
@@ -51,8 +76,7 @@ class Pausable {
           await fn(...args)
         } catch (error) {
           this.emit(EVENT_ERROR, {
-            error,
-            host: this
+            error
           })
         }
       })
