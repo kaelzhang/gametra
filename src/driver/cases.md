@@ -1,15 +1,21 @@
 # Cases
 
-## Case 1
+## Master
+- will never exit
+- should only be started once
 
-A tasks is in progress
+## Non-master
+- will exit when
+  - if there is an exit action, and it is triggered
+  - if there is no exit action, and the cargo is drained
+- actions will be purged when the scheduler is exited
+- could be started multiple times
+  - but only when it has been reset
 
-
-interupt
-- dialog prompts
--
-
-
-on idle:
-  -> schedule jump
-  -> schedule operate
+## Both
+- when it forks
+  - it will pause itself
+  - it will resume the forked scheduler
+- when the forked scheduler is exited
+  - it will resume itself
+  - it will pause the forked scheduler

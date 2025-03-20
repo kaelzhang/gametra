@@ -429,9 +429,6 @@ class Scheduler extends Pausable {
     console.log(this, '#start completed')
   }
 
-  // Master
-  //
-
   async #startCargo () {
     const {promise, resolve} = Promise.withResolvers()
     this.#cargoResolve = resolve
