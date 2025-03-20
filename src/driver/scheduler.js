@@ -8,7 +8,7 @@ const {
   Action,
   ActionGroup
 } = require('./action')
-const {Pausable} = require('../util')
+const {Pausable} = require('../')
 const {Cargo} = require('./cargo')
 
 const {
@@ -23,7 +23,7 @@ const {
   EVENT_DRAINING,
   EVENT_DRAINED,
   EVENT_PAUSED
-} = require('../const')
+} = require('../constants')
 
 const MIN_INTERVAL = 20
 

@@ -1,6 +1,6 @@
 const {
   NOOP
-} = require('../const')
+} = require('../constants')
 
 
 class Queue {

@@ -19,3 +19,12 @@
 - when the forked scheduler is exited
   - it will resume itself
   - it will pause the forked scheduler
+
+
+main
+-> click
+o-> viewport freeze -> reload
+o-> invite -> fork
+    -> fork: click
+    -> idle: fish button -> click
+    o-> not active -> exit

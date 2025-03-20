@@ -15,7 +15,7 @@ const {
   UNDEFINED,
   NOOP,
   BUTTON_LEFT
-} = require('../../const')
+} = require('../../constants')
 
 const {
   BrowserWindow,

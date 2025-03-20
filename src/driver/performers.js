@@ -2,12 +2,12 @@ const {setTimeout} = require('node:timers/promises')
 
 const {
   Pausable
-} = require('../util')
+} = require('../')
 
 const {
   UNDEFINED,
   NOOP
-} = require('../const')
+} = require('../constants')
 
 
 const LAST_PROCESSED_KEY = Symbol('lastProcessed')

@@ -1,4 +1,3 @@
-const EventEmitter = require('node:events')
 const log = require('node:util').debuglog('gametra')
 
 const {Jimp} = require('jimp')
@@ -6,7 +5,7 @@ const {Jimp} = require('jimp')
 const {
   UNDEFINED,
   EVENT_PAUSED
-} = require('./const')
+} = require('./constants')
 
 
 class Viewport {
@@ -79,76 +78,10 @@ class NotImplementedError extends Error {
 }
 
 
-class Pausable extends EventEmitter {
-  #pausePromise
-  #pauseResolve
-  #emitsOnHold = []
-
-  emit (...args) {
-    if (this.paused) {
-      this.#emitsOnHold.push(args)
-      return false
-    }
-
-    return super.emit(...args)
-  }
-
-  get paused () {
-    return !!this.#pausePromise
-  }
-
-  pause () {
-    if (this.paused) {
-      // Already paused. Skip.
-      // We should never pause again,
-      // or the promise created previously will never be resolved
-      return
-    }
-
-    const {promise, resolve} = Promise.withResolvers()
-
-    // We should emit the event before assigning this.#pausePromise
-    this.emit(EVENT_PAUSED)
-
-    this.#pausePromise = promise
-    this.#pauseResolve = resolve
-  }
-
-  resume () {
-    if (!this.paused) {
-      // Already resumed. Skip.
-      return
-    }
-
-    const onHold = [].concat(this.#emitsOnHold)
-    this.#emitsOnHold.length = 0
-
-    for (const args of onHold) {
-      super.emit(...args)
-    }
-
-    if (this.#pauseResolve) {
-      this.#pauseResolve()
-    }
-
-    this.#pausePromise = UNDEFINED
-    this.#pauseResolve = UNDEFINED
-  }
-
-  // Could be used in the _perform method of a sub class
-  async waitPause () {
-    if (this.#pausePromise) {
-      return this.#pausePromise
-    }
-  }
-}
-
-
 module.exports = {
   log,
   Viewport,
   Point,
-  Pausable,
   encodeNativeBMPImage,
   NotImplementedError
 }

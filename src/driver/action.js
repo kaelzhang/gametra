@@ -4,11 +4,11 @@ const {
   UNDEFINED,
   NotImplementedError,
   Pausable
-} = require('../util')
+} = require('../')
 
 const {
   NOOP
-} = require('../const')
+} = require('../constants')
 
 const {Queue} = require('./queue')
 

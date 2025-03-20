@@ -14,7 +14,9 @@ const EVENT_FORK = 'fork'
 const EVENT_FORKED = 'forked'
 const EVENT_ERROR = 'error'
 const EVENT_DRAINED = 'drained'
-const EVENT_PAUSED = 'paused'
+
+// For internal use only
+const EVENT_PAUSED = Symbol('paused')
 
 
 module.exports = {

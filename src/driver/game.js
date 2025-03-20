@@ -1,6 +1,6 @@
 const {
   USERAGENT_CHROME
-} = require('../const')
+} = require('../constants')
 
 const {
   Viewport

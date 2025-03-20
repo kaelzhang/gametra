@@ -4,7 +4,7 @@ const {
 
 const {
   Pausable
-} = require('../util')
+} = require('../')
 
 const {
   NOOP,
@@ -12,8 +12,7 @@ const {
   EVENT_DRAINING,
   EVENT_DRAINED,
   EVENT_RESET
-} = require('../const')
-
+} = require('../constants')
 
 
 class Cargo extends Pausable {
