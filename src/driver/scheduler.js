@@ -366,10 +366,7 @@ class Scheduler extends Pausable {
 
   async #start () {
     if (this.#completePromise) {
-      // Do not restart the scheduler again
-      throw new Error(
-        `${this} should not be started more than once`
-      )
+      return this.#completePromise
     }
 
     const {promise, resolve} = Promise.withResolvers()

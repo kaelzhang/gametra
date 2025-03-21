@@ -10,15 +10,13 @@ const {
 } = require('..')
 
 
-test('start master scheduler twice', async t => {
+test('ok to start master scheduler twice', async t => {
   const scheduler = new Scheduler()
 
-  await t.throwsAsync(async () => Promise.all([
-    scheduler.start(),
-    scheduler.start()
-  ]), {
-    message: /more than once/
-  })
+  scheduler.start()
+  scheduler.start()
+
+  t.pass()
 })
 
 
