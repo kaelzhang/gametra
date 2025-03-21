@@ -20,6 +20,40 @@ test('ok to start master scheduler twice', async t => {
 })
 
 
+test('should not for into itself', t => {
+  const scheduler = new Scheduler({master: false})
+
+  t.throws(() => {
+    scheduler.fork(() => true, scheduler)
+  }, {
+    message: /itself/
+  })
+})
+
+
+test('master scheduler should not exit', t => {
+  const scheduler = new Scheduler()
+
+  t.throws(() => {
+    scheduler.exit(() => true)
+  }, {
+    message: /master/
+  })
+})
+
+
+test('should not fork into a master scheduler', t => {
+  const scheduler = new Scheduler({master: false})
+  const master = new Scheduler()
+
+  t.throws(() => {
+    scheduler.fork(() => true, master)
+  }, {
+    message: /master/
+  })
+})
+
+
 test('scheduler fork condition error', async t => {
   class MyForkAction extends Action {
     async _perform (game) {

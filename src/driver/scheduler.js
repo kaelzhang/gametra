@@ -270,12 +270,13 @@ class Scheduler extends Pausable {
     })
   ) {
     if (scheduler.master) {
-      throw new Error('The forked scheduler should not be the master')
+      throw new Error('A scheduler should not fork into a master scheduler')
     }
 
+    // TODO: Test circular dependency
     if (scheduler === this) {
       throw new Error(
-        'The forked scheduler should not be the same as the parent'
+        'A scheduler should not fork into itself'
       )
     }
 
