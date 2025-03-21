@@ -10,6 +10,7 @@ class Pausable {
   #pausePromise
   #pauseResolve
   #listeners = {}
+  #emitsOnHold = []
   #name
 
   name (name) {
@@ -61,7 +62,12 @@ class Pausable {
       return this.#emitError(...args)
     }
 
-    return this.#emitAsync(event, ...args)
+    if (this.paused) {
+      this.#emitsOnHold.push([event, ...args])
+      return false
+    }
+
+    return this.#emitSync(event, ...args)
   }
 
   #emitError (errorInfo) {
@@ -71,17 +77,22 @@ class Pausable {
     const host = errorInfo.host || this
     const arg = {
       ...errorInfo,
-      host: this
+      host
     }
 
+    return this.#emitSync(EVENT_ERROR, arg)
+  }
+
+  #emitSync (event, ...args) {
+    const listeners = this.#getListeners(event)
     listeners.forEach(fn => {
-      fn(arg)
+      fn(...args)
     })
 
     return !!listeners.length
   }
 
-  async #emitAsync (event, ...args) {
+  async emitAsync (event, ...args) {
     await this.waitPause()
 
     const listeners = this.#getListeners(event)
@@ -123,6 +134,13 @@ class Pausable {
     if (!this.paused) {
       // Already resumed. Skip.
       return
+    }
+
+    const onHold = [].concat(this.#emitsOnHold)
+    this.#emitsOnHold.length = 0
+
+    for (const args of onHold) {
+      this.#emitSync(...args)
     }
 
     this.#pauseResolve()

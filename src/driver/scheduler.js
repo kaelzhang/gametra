@@ -9,6 +9,7 @@ const {
 } = require('./action')
 const {Pausable} = require('./pausable')
 const {Cargo} = require('./cargo')
+const {createAction} = require('./tools')
 
 const {
   UNDEFINED,
@@ -24,6 +25,15 @@ const {
 const MIN_INTERVAL = 20
 
 
+const makeWhen = when => {
+  if (when instanceof Action) {
+    return when
+  }
+
+  return createAction(when)
+}
+
+
 class Whenever extends Pausable {
   #when
   #then
@@ -31,7 +41,7 @@ class Whenever extends Pausable {
 
   constructor (when) {
     super()
-    this.#when = when
+    this.#when = makeWhen(when)
   }
 
   then (then) {
@@ -73,11 +83,12 @@ class Whenever extends Pausable {
       let yes = false
 
       try {
-        yes = await when(...this.#args)
+        yes = await when.perform(...this.#args)
       } catch (error) {
         this.emit(EVENT_ERROR, {
           type: 'whenever-error',
-          error
+          error,
+          host: when
         })
         continue
       }
@@ -96,16 +107,6 @@ class Whenever extends Pausable {
       }
     }
   }
-}
-
-
-const makeWhen = when => {
-  if (when instanceof Action) {
-    const action = when.queue(false)
-    return (...args) => action.perform(...args)
-  }
-
-  return when
 }
 
 
@@ -165,7 +166,7 @@ class Scheduler extends Pausable {
   }
 
   #emitAsync (event) {
-    return super.emit(event, this.#performAction)
+    return super.emitAsync(event, this.#performAction)
   }
 
   #reset () {
@@ -214,7 +215,7 @@ class Scheduler extends Pausable {
           this.emit(EVENT_ERROR, {
             type: 'action-error',
             error,
-            host: this
+            host: action
           })
         })
       )
@@ -256,7 +257,7 @@ class Scheduler extends Pausable {
   }
 
   fork (when, ...rest) {
-    return this.#fork(makeWhen(when), ...rest)
+    return this.#fork(when, ...rest)
   }
 
   // Create a forked branch of the scheduler
@@ -400,13 +401,6 @@ class Scheduler extends Pausable {
     this.#cargoResolve = resolve
 
     const onDrained = () => {
-      // console.log('onDrain',
-      //   // Has exit action, and it is not exited yet
-      //   this.#hasExit && !this.#exited
-      //   // Or it is the master scheduler
-      //   || this.#master
-      // )
-
       if (
         // Has exit action, and it is not exited yet
         this.#hasExit && !this.#exited
@@ -423,6 +417,7 @@ class Scheduler extends Pausable {
 
     this.#cargo
     .on(EVENT_DRAINED, onDrained)
+    .check()
 
     return promise
   }

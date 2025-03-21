@@ -22,6 +22,26 @@ test('pausable', async t => {
   t.is(pausable.paused, false)
 })
 
+
+test('pausable: events when paused', async t => {
+  let count = 0
+
+  const pausable = new Pausable()
+  .on('foo', () => {
+    count ++
+  })
+
+  pausable.pause()
+  pausable.emit('foo')
+
+  t.is(count, 0)
+
+  pausable.resume()
+
+  t.is(count, 1)
+})
+
+
 test('pausable events', async t => {
   const pausable = new Pausable()
 
@@ -46,7 +66,7 @@ test('pausable events', async t => {
     baz = n + count ++
   })
 
-  const result = await pausable.emit('foo', 10)
+  const result = await pausable.emitAsync('foo', 10)
 
   t.is(result, true)
   t.is(foo, 10)
@@ -56,7 +76,7 @@ test('pausable events', async t => {
   pausable.pause()
   pausable.pause()
 
-  const promise = pausable.emit('foo', 100).then(result => {
+  const promise = pausable.emitAsync('foo', 100).then(result => {
     t.is(result, true)
     t.is(foo, 103)
     t.is(bar, 104)
@@ -74,21 +94,21 @@ test('pausable events', async t => {
 
   pausable.off('foo', barHandler)
 
-  t.is(await pausable.emit('foo', 1000), true)
+  t.is(await pausable.emitAsync('foo', 1000), true)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
 
   pausable.removeAllListeners('foo')
 
-  t.is(await pausable.emit('foo', 10000), false)
+  t.is(await pausable.emitAsync('foo', 10000), false)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
 
   pausable.removeAllListeners()
 
-  t.is(await pausable.emit('foo', 10000), false)
+  t.is(await pausable.emitAsync('foo', 10000), false)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
@@ -106,5 +126,5 @@ test('pausable error', async t => {
     t.is(error.host, pausable)
   })
 
-  await pausable.emit('foo')
+  await pausable.emitAsync('foo')
 })

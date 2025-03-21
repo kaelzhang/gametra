@@ -5,7 +5,8 @@ const {setTimeout} = require('node:timers/promises')
 
 const {
   Action,
-  Scheduler
+  Scheduler,
+  createAction
 } = require('..')
 
 
@@ -65,3 +66,39 @@ test('scheduler fork condition error', async t => {
   scheduler.pause()
 })
 
+test('scheduler async event error', async t => {
+  const errorAction = createAction(() => {
+    throw new Error('test')
+  })
+
+  let shouldFork = true
+
+  const forkCondition = createAction(() => {
+    if (shouldFork) {
+      shouldFork = false
+      return true
+    }
+
+    return false
+  })
+
+  const {promise, resolve} = Promise.withResolvers()
+
+  const scheduler = new Scheduler()
+  .on('back', async perform => {
+    await perform(errorAction)
+  })
+  .on('error', errorInfo => {
+    const {error, host} = errorInfo
+
+    t.is(error.message, 'test')
+    t.is(host, errorAction)
+    resolve()
+  })
+
+  scheduler.fork(forkCondition)
+
+  scheduler.start()
+  await promise
+  scheduler.pause()
+})
