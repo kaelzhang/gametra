@@ -81,7 +81,13 @@ class Cargo extends Pausable {
 
     return action
     .perform(...this.#args)
-    .catch(this.#onError)
+    .catch(error => {
+      this.#onError({
+        type: 'action-error',
+        error,
+        host: action
+      })
+    })
     .then(result => {
       this.#processing.delete(action)
       this.#check()

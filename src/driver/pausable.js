@@ -57,6 +57,7 @@ class Pausable {
   // ```
   emit (event, ...args) {
     if (event === EVENT_ERROR) {
+      // Emit error immediately without `await waitPause()`
       return this.#emitError(...args)
     }
 

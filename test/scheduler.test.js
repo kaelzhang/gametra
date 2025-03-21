@@ -209,6 +209,7 @@ test.only('forked scheduler error', async t => {
   })
 
   let shouldFork = false
+  let exitCount = 0
 
   const forked = scheduler.fork(async () => {
     const result = shouldFork
@@ -217,6 +218,11 @@ test.only('forked scheduler error', async t => {
   })
   .on('start', add => {
     add(errorAction)
+  })
+  .on('exit', async perform => {
+    await perform(createAction(() => {
+      exitCount ++
+    }))
   })
 
   const fork = () => {
@@ -229,56 +235,6 @@ test.only('forked scheduler error', async t => {
 
   await forkedPromise
   await backPromise
+  t.is(exitCount, 1)
   scheduler.pause()
 })
-
-
-// test.only('fork to itself', async t => {
-//   const scheduler = new Scheduler({
-//     master: false
-//   })
-
-//   let forked = true
-//   let forkedCount = 0
-
-//   const forkCondition = createAction(async () => {
-//     await setTimeout(10)
-
-//     if (forked) {
-//       forkedCount ++
-
-//       if (forkedCount === 2) {
-//         forked = false
-//       }
-
-//       return true
-//     }
-//   })
-
-//   let count = 0
-
-//   const forkAction = createAction(async () => {
-//     await setTimeout(50)
-//     count ++
-//   })
-
-//   const action = createAction(async () => {
-//     await setTimeout(200)
-//   }).queue(false)
-
-//   scheduler.fork(forkCondition, scheduler)
-//   .on('forked', add => {
-//     console.log('forked')
-//     add(forkAction)
-//   })
-//   .on('idle', add => {
-//     console.log('idle')
-//     add(action)
-//   })
-
-//   scheduler.start()
-//   scheduler.resume()
-
-//   await scheduler.complete()
-//   t.is(count, 2)
-// })

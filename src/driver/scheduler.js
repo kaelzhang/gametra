@@ -114,7 +114,6 @@ class Scheduler extends Pausable {
   #cargo
   #completePromise
   #args
-  #withinEventHandler = false
   #inited = false
   #hasExit = false
   #exited = false
@@ -135,11 +134,7 @@ class Scheduler extends Pausable {
 
     this.#cargo = new Cargo()
     .onError(error => {
-      this.emit(EVENT_ERROR, {
-        type: 'action-error',
-        error,
-        host: this
-      })
+      this.emit(EVENT_ERROR, error)
     })
 
     this.#master = master
@@ -166,11 +161,11 @@ class Scheduler extends Pausable {
       })
     }
 
-    this.#withinEventHandler = true
-    const ret = super.emit(event, this.#addAction, this.#performAction)
-    this.#withinEventHandler = false
+    return super.emit(event, this.#addAction)
+  }
 
-    return ret
+  #emitAsync (event) {
+    return super.emit(event, this.#performAction)
   }
 
   #reset () {
@@ -179,11 +174,10 @@ class Scheduler extends Pausable {
   }
 
   pause () {
-    if (this.#forked && this.#forked !== this) {
+    if (this.#forked) {
       // If we call pause() when the current scheduler is forked,
       // actually we want to pause the sub scheduler that it forked into
       this.#forked.pause()
-
       return
     }
 
@@ -195,16 +189,14 @@ class Scheduler extends Pausable {
   }
 
   resume () {
-    if (this.#forked && this.#forked !== this) {
+    if (this.#forked) {
       // If the current scheduler is forked,
       // actually we want to resume the sub scheduler that it forked into
       this.#forked.resume()
       return
     }
 
-    this.#withinEventHandler = true
     super.resume()
-    this.#withinEventHandler = false
 
     this.#cargo.resume()
 
@@ -221,7 +213,8 @@ class Scheduler extends Pausable {
         action => action.perform(...this.#args).catch(error => {
           this.emit(EVENT_ERROR, {
             type: 'action-error',
-            error
+            error,
+            host: this
           })
         })
       )
@@ -279,9 +272,15 @@ class Scheduler extends Pausable {
       throw new Error('The forked scheduler should not be the master')
     }
 
+    if (scheduler === this) {
+      throw new Error(
+        'The forked scheduler should not be the same as the parent'
+      )
+    }
+
     const whenever = new Whenever(when).then(async () => {
       // We could do something before the forked scheduler starts
-      await this.emit(EVENT_FORK)
+      await this.#emitAsync(EVENT_FORK)
 
       // Pause the parent scheduler,
       // which will also pause the whenever
@@ -295,7 +294,7 @@ class Scheduler extends Pausable {
       this.resume()
 
       whenever.resume()
-      await this.emit(EVENT_BACK)
+      await this.#emitAsync(EVENT_BACK)
     })
 
     this.#addWhenever(whenever)
@@ -350,8 +349,6 @@ class Scheduler extends Pausable {
 
     await promise
     this.#exitResolve = UNDEFINED
-
-    await this.emit(EVENT_EXIT)
   }
 
   async start (...args) {
@@ -390,7 +387,7 @@ class Scheduler extends Pausable {
     ])
 
     // We could do something before the scheduler completely exits
-    await this.emit(EVENT_EXIT)
+    await this.#emitAsync(EVENT_EXIT)
 
     this.#reset()
 
