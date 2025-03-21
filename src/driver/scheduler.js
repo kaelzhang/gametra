@@ -8,7 +8,7 @@ const {
   Action,
   ActionGroup
 } = require('./action')
-const {Pausable} = require('../')
+const {Pausable} = require('./pausable')
 const {Cargo} = require('./cargo')
 
 const {
@@ -117,7 +117,7 @@ class Scheduler extends Pausable {
   #completePromise
   #args
   #withinEventHandler = false
-  #started = false
+  #inited = false
   #hasExit = false
   #exited = false
   #exitResolve = UNDEFINED
@@ -158,21 +158,22 @@ class Scheduler extends Pausable {
     return this
   }
 
-  #initEvents () {
-    this.emit(EVENT_START)
-    this.emit(EVENT_IDLE)
-  }
-
   emit (event, ...args) {
     if (event === EVENT_ERROR) {
       return super.emit(event, ...args)
     }
 
+    // TODO: revamp
     this.#withinEventHandler = true
     const ret = super.emit(event, this.add.bind(this), ...args)
     this.#withinEventHandler = false
 
     return ret
+  }
+
+  #reset () {
+    this.#cargo.reset()
+    this.pause()
   }
 
   pause () {
@@ -216,13 +217,6 @@ class Scheduler extends Pausable {
     }
 
     this.#cargo.add(...actions)
-
-    // Already initialized
-    if (this.#master && this.#args) {
-      console.log(this, 'auto #start for master')
-      // Then try to start the master scheduler again
-      this.#start()
-    }
   }
 
   #addWhenever (whenever) {
@@ -240,7 +234,7 @@ class Scheduler extends Pausable {
       whenever.pause()
     }
 
-    if (this.#started) {
+    if (this.#inited) {
       whenever.start(...this.#args)
     }
   }
@@ -305,27 +299,6 @@ class Scheduler extends Pausable {
     return scheduler
   }
 
-  // reset (when) {
-  //   return this.#reset(makeWhen(when))
-  // }
-
-  // // Restart the scheduler,
-  // // clean all actions, and emit the idle event
-  // #reset (when) {
-  //   const whenever = new Whenever(when).then(() => {
-  //     this.#cargo.reset()
-
-  //     this.emit(EVENT_RESET)
-  //     this.emit(EVENT_IDLE)
-
-  //     whenever.resume()
-  //   })
-
-  //   this.#addWhenever(whenever)
-
-  //   return this
-  // }
-
   exit (when) {
     if (this.#master) {
       throw new Error('The master scheduler should not exit')
@@ -374,32 +347,23 @@ class Scheduler extends Pausable {
   }
 
   async start (...args) {
-    if (this.#master && this.#started) {
-      throw new Error(
-        'The master scheduler should not be started more than once'
-      )
-    }
-
-    if (!this.#started) {
+    if (!this.#inited) {
       // Initialize the events only once
-      this.#initEvents()
-      this.#started = true
+      this.#inited = true
       this.#args = args
-      this.#cargo.args(args)
       this.#startMonitors()
+      this.#cargo.args(args)
     }
 
     await this.#start()
   }
 
-  get started () {
-    return this.#started
-  }
-
   async #start () {
     if (this.#completePromise) {
       // Do not restart the scheduler again
-      return this.#completePromise
+      throw new Error(
+        `${this} should not be started more than once`
+      )
     }
 
     const {promise, resolve} = Promise.withResolvers()
@@ -412,16 +376,12 @@ class Scheduler extends Pausable {
       this.#waitExit()
     ])
 
-    if (!this.#master) {
-      // If it is not the master scheduler,
-      // pause it when the actions are drained
-      this.pause()
-    }
+    await this.emit(EVENT_EXIT)
+
+    this.#reset()
 
     resolve()
     this.#completePromise = UNDEFINED
-
-    console.log(this, '#start completed')
   }
 
   async #startCargo () {
@@ -431,8 +391,10 @@ class Scheduler extends Pausable {
     const onDrained = async () => {
       this.emit(EVENT_IDLE)
 
-      console.log(this, 'cargo drained', this.#hasExit && !this.#exited, this.paused)
-      if (this.#hasExit && !this.#exited) {
+      if (
+        this.#hasExit && !this.#exited
+        || this.#master
+      ) {
         return
       }
 

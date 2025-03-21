@@ -53,6 +53,9 @@ class Pausable {
 
   #emitError (errorInfo) {
     const listeners = this.#getListeners(EVENT_ERROR)
+
+    // Try not to override the host as mush as possible
+    const host = errorInfo.host || this
     const arg = {
       ...errorInfo,
       host: this

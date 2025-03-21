@@ -8,7 +8,7 @@ const {
 
 const {
   log
-} = require('../')
+} = require('../util')
 
 
 const DEFAULT_GET_SCREENSHOT = (game, viewport) => game.screenshot(viewport)

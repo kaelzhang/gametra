@@ -1,10 +1,11 @@
 const {setTimeout} = require('node:timers/promises')
 
+const {Pausable} = require('./pausable')
+
 const {
   UNDEFINED,
-  NotImplementedError,
-  Pausable
-} = require('../')
+  NotImplementedError
+} = require('../util')
 
 const {
   NOOP

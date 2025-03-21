@@ -2,9 +2,7 @@ const {
   setImmediate
 } = require('node:timers/promises')
 
-const {
-  Pausable
-} = require('../')
+const {Pausable} = require('./pausable')
 
 const {
   NOOP,

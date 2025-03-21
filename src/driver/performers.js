@@ -1,8 +1,6 @@
 const {setTimeout} = require('node:timers/promises')
 
-const {
-  Pausable
-} = require('../')
+const {Pausable} = require('./pausable')
 
 const {
   UNDEFINED,

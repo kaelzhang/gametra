@@ -4,7 +4,7 @@
   "description": "A cloud game driver and automator",
   "main": "src/index.js",
   "scripts": {
-    "test": "NODE_DEBUG=gametra nyc ava --timeout=10s --verbose",
+    "test": "NODE_DEBUG=gametra NODE_OPTIONS=--trace-warnings nyc ava --timeout=10s --verbose",
     "test:dev": "NODE_DEBUG=gametra nyc ava --timeout=10s --verbose && npm run report:dev",
     "lint": "eslint .",
     "fix": "eslint . --fix",
@@ -27,7 +27,7 @@
   },
   "ava": {
     "files": [
-      "test/pausable.test.js"
+      "test/*.test.js"
     ]
   },
   "author": "kaelzhang",
