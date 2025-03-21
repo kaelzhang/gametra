@@ -68,15 +68,11 @@ test('scheduler pause when forked', async t => {
 
   const forked = scheduler.fork(forkCondition)
   .name('forked')
-  .on('forked', add => {
+  .on('start', add => {
     add(actionForForked)
   })
 
   scheduler.start()
-
-  // TODO: why should we need to wait 100 ms here?
-  // something potential is wrong here
-  // await setTimeout(100)
 
   const {promise, resolve} = Promise.withResolvers()
   waitPromise = promise

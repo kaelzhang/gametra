@@ -3,8 +3,7 @@ const log = require('node:util').debuglog('gametra')
 const {Jimp} = require('jimp')
 
 const {
-  UNDEFINED,
-  EVENT_PAUSED
+  UNDEFINED
 } = require('./constants')
 
 

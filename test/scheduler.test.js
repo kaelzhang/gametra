@@ -12,7 +12,7 @@ const {
 } = require('..')
 
 
-test.only('a complex case: pause and resume', async t => {
+test('a complex case: pause and resume', async t => {
   // Main
   /////////////////////////////////////////
   let count = 0
@@ -73,16 +73,14 @@ test.only('a complex case: pause and resume', async t => {
   // Run tests
   /////////////////////////////////////
 
-  scheduler.pause()
   scheduler.start()
+  scheduler.pause()
 
   await setTimeout(200)
 
   // it should still be 0, even after 200ms,
   // because the scheduler is paused
   t.is(count, 0)
-
-  console.log('=============== 1')
 
   scheduler.resume()
   await setTimeout(100)
@@ -91,8 +89,6 @@ test.only('a complex case: pause and resume', async t => {
   await setTimeout(200)
 
   t.is(count, 1)
-
-  console.log('=============== 2')
 
   scheduler.resume()
 
@@ -103,9 +99,6 @@ test.only('a complex case: pause and resume', async t => {
   // The forked scheduler should only run once,
   // even after a lot of time
   t.is(forkedCount, 1)
-  return
-
-  console.log('=============== 3')
 
   scheduler.resume()
 
@@ -117,64 +110,6 @@ test.only('a complex case: pause and resume', async t => {
   // The forked scheduler should only run once,
   // even after a lot of time
   t.is(forkedCount, 2)
-
-  scheduler.pause()
-})
-
-
-test('scheduler reset', async t => {
-  let count = 0
-
-  class TestAction extends Action {
-    async _perform () {
-      count ++
-      await setTimeout(200)
-    }
-  }
-
-  const action = new TestAction()
-
-  let shouldReset = false
-  let reset = false
-
-  const {
-    promise: resetPromise,
-    resolve: resolveReset
-  } = Promise.withResolvers()
-
-  const scheduler = new Scheduler({
-    master: false
-  })
-  .on('idle', add => {
-    add(action)
-  })
-  .on('reset', () => {
-    reset = true
-  })
-  .reset(async () => {
-    const reset = shouldReset
-    shouldReset = false
-    await setTimeout(100)
-    if (reset) {
-      resolveReset()
-    }
-    return reset
-  })
-
-  scheduler.start()
-
-  // Sub scheduler is paused by default, so we need to resume it
-  scheduler.resume()
-  await scheduler.complete()
-  t.is(count, 1)
-
-  shouldReset = true
-  scheduler.start()
-  scheduler.resume()
-  await resetPromise
-  await setTimeout(1)
-
-  t.is(reset, true)
 
   scheduler.pause()
 })
@@ -198,32 +133,17 @@ test('scheduler error', async t => {
     add(new ErrorAction())
   })
 
-  scheduler.resume()
   await scheduler.start()
 })
 
 
 test('scheduler whenever error', async t => {
-  class TestAction extends Action {
-    static PERFORMER = IntervalPerformer
-
-    async _perform () {
-      await setTimeout(100)
-    }
-  }
-
-  const action = new TestAction()
-
   const scheduler = new Scheduler({
     master: false
   })
   .on('error', payload => {
     t.is(payload.type, 'whenever-error')
     t.is(payload.error.message, 'test')
-  })
-  .on('idle', add => {
-    // To make sure the scheduler never pause by itself
-    add(action)
   })
 
   class ForkedAction extends Action {
@@ -246,10 +166,15 @@ test('scheduler whenever error', async t => {
 })
 
 
-test('forked scheduler error', async t => {
+test.only('forked scheduler error', async t => {
   const {
     promise: forkedPromise,
     resolve: resolveForked
+  } = Promise.withResolvers()
+
+  const {
+    promise: exitPromise,
+    resolve: resolveExit
   } = Promise.withResolvers()
 
   class ErrorAction extends Action {
@@ -275,6 +200,7 @@ test('forked scheduler error', async t => {
     master: false
   })
   .on('error', payload => {
+    console.log('error', payload)
     t.is(payload.type, 'action-error')
     t.is(payload.error.message, 'test')
     t.is(payload.scheduler, forked)
@@ -290,8 +216,11 @@ test('forked scheduler error', async t => {
     shouldFork = false
     return result
   })
-  .on('forked', add => {
+  .on('start', add => {
     add(errorAction)
+  })
+  .on('exit', () => {
+    resolveExit()
   })
 
   const fork = () => {
@@ -300,15 +229,10 @@ test('forked scheduler error', async t => {
 
   fork()
 
-  scheduler.resume()
   scheduler.start()
-  t.is(scheduler.started, true)
 
   await forkedPromise
-  await setTimeout(100)
-
-  scheduler.reset(() => true)
-  await setTimeout(100)
+  await exitPromise
   scheduler.pause()
 })
 

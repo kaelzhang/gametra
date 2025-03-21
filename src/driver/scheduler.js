@@ -15,14 +15,10 @@ const {
   UNDEFINED,
   EVENT_START,
   EVENT_IDLE,
-  // EVENT_RESET,
   EVENT_EXIT,
   EVENT_FORK,
-  // EVENT_FORKED,
   EVENT_ERROR,
-  // EVENT_DRAINING,
-  EVENT_DRAINED,
-  EVENT_PAUSED
+  EVENT_DRAINED
 } = require('../constants')
 
 const MIN_INTERVAL = 20
@@ -79,7 +75,10 @@ class Whenever extends Pausable {
       try {
         yes = await when(...this.#args)
       } catch (error) {
-        this.emit(EVENT_ERROR, error)
+        this.emit(EVENT_ERROR, {
+          type: 'whenever-error',
+          error
+        })
         continue
       }
 
@@ -124,11 +123,16 @@ class Scheduler extends Pausable {
   #cargoResolve = UNDEFINED
   #whenevers = new Set()
   #forked = UNDEFINED
+  #addAction
+  #performAction
 
   constructor ({
     master = true
   } = {}) {
     super()
+
+    this.#addAction = this.#add.bind(this)
+    this.#performAction = this.#perform.bind(this)
 
     this.#cargo = new Cargo()
     .onError(error => {
@@ -145,6 +149,7 @@ class Scheduler extends Pausable {
       // A non-master scheduler is paused by default,
       // so that it won't start automatically
       this.pause()
+      this.#cargo.pause()
     }
   }
 
@@ -153,19 +158,27 @@ class Scheduler extends Pausable {
     return `[Scheduler: ${name}]`
   }
 
+  get master () {
+    return this.#master
+  }
+
   name (name) {
     this.#name = name
     return this
   }
 
-  emit (event, ...args) {
+  emit (event, payload) {
     if (event === EVENT_ERROR) {
-      return super.emit(event, ...args)
+      const scheduler = payload.scheduler || this
+
+      return super.emit(event, {
+        ...payload,
+        scheduler
+      })
     }
 
-    // TODO: revamp
     this.#withinEventHandler = true
-    const ret = super.emit(event, this.add.bind(this), ...args)
+    const ret = super.emit(event, this.#addAction, this.#performAction)
     this.#withinEventHandler = false
 
     return ret
@@ -209,25 +222,28 @@ class Scheduler extends Pausable {
     this.#resumeMonitors()
   }
 
-  add (...actions) {
-    if (!this.#withinEventHandler) {
-      // The scheduler is a way to manage the lifecycle of a series of jobs,
-      // so we should not add actions outside events
-      throw new Error('You should not add actions outside of an event handler')
-    }
-
+  #add (...actions) {
     this.#cargo.add(...actions)
+  }
+
+  #perform (...actions) {
+    return Promise.all(
+      actions.map(
+        action => action.perform(...this.#args).catch(error => {
+          this.emit(EVENT_ERROR, {
+            type: 'action-error',
+            error
+          })
+        })
+      )
+    )
   }
 
   #addWhenever (whenever) {
     this.#whenevers.add(whenever)
 
     whenever.on(EVENT_ERROR, error => {
-      this.emit(EVENT_ERROR, {
-        type: 'whenever-error',
-        error,
-        scheduler: this
-      })
+      this.emit(EVENT_ERROR, error)
     })
 
     if (this.paused) {
@@ -270,15 +286,17 @@ class Scheduler extends Pausable {
       master: false
     })
   ) {
+    if (scheduler.master) {
+      throw new Error('The forked scheduler should not be the master')
+    }
+
     const whenever = new Whenever(when).then(async () => {
+      // We could do something before the forked scheduler starts
+      await this.emit(EVENT_FORK)
+
       // Pause the parent scheduler,
       // which will also pause the whenever
       this.pause()
-
-      await this.emit(EVENT_FORK)
-
-      // Resume the sub scheduler and start it
-      scheduler.resume()
 
       this.#forked = scheduler
       await scheduler.start(...this.#args)
@@ -288,6 +306,7 @@ class Scheduler extends Pausable {
       this.resume()
 
       whenever.resume()
+      console.log('after fork')
     })
 
     this.#addWhenever(whenever)
@@ -369,6 +388,11 @@ class Scheduler extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#completePromise = promise
 
+    this.resume()
+
+    this.emit(EVENT_START)
+    this.emit(EVENT_IDLE)
+
     this.#exited = false
 
     await Promise.all([
@@ -376,6 +400,7 @@ class Scheduler extends Pausable {
       this.#waitExit()
     ])
 
+    // We could do something before the scheduler completely exits
     await this.emit(EVENT_EXIT)
 
     this.#reset()
@@ -388,18 +413,25 @@ class Scheduler extends Pausable {
     const {promise, resolve} = Promise.withResolvers()
     this.#cargoResolve = resolve
 
-    const onDrained = async () => {
-      this.emit(EVENT_IDLE)
+    const onDrained = () => {
+      // console.log('onDrain',
+      //   // Has exit action, and it is not exited yet
+      //   this.#hasExit && !this.#exited
+      //   // Or it is the master scheduler
+      //   || this.#master
+      // )
 
       if (
+        // Has exit action, and it is not exited yet
         this.#hasExit && !this.#exited
+        // Or it is the master scheduler
         || this.#master
       ) {
+        this.emit(EVENT_IDLE)
         return
       }
 
-      this.#cargo.pause()
-      this.#cargo.removeListener(EVENT_DRAINED, onDrained)
+      this.#cargo.reset()
       this.#releaseCargo()
     }
 

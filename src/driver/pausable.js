@@ -1,7 +1,6 @@
 const {
   UNDEFINED,
-  EVENT_ERROR,
-  EVENT_PAUSED
+  EVENT_ERROR
 } = require('../constants')
 
 
@@ -101,9 +100,6 @@ class Pausable {
     }
 
     const {promise, resolve} = Promise.withResolvers()
-
-    // We should emit the event before assigning this.#pausePromise
-    this.emit(EVENT_PAUSED)
 
     this.#pausePromise = promise
     this.#pauseResolve = resolve

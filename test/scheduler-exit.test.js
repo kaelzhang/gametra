@@ -34,7 +34,6 @@ test('scheduler exit', async t => {
   })
 
   scheduler.start()
-  scheduler.resume()
 
   await scheduler.complete()
   t.is(count, 1)

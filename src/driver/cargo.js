@@ -7,9 +7,7 @@ const {Pausable} = require('./pausable')
 const {
   NOOP,
   EVENT_ERROR,
-  EVENT_DRAINING,
-  EVENT_DRAINED,
-  EVENT_RESET
+  EVENT_DRAINED
 } = require('../constants')
 
 
@@ -18,12 +16,6 @@ class Cargo extends Pausable {
   #processing = new Set()
   #args = []
   #onError = NOOP
-
-  constructor () {
-    super()
-
-    this.pause()
-  }
 
   args (args) {
     this.#args = args
@@ -63,9 +55,7 @@ class Cargo extends Pausable {
   reset () {
     this.#apply('cancel')
     this.#processing.clear()
-    this.emit(EVENT_RESET)
     this.removeAllListeners()
-
     this.pause()
   }
 
@@ -89,22 +79,17 @@ class Cargo extends Pausable {
 
     this.#processing.add(action)
 
-    const promise = action.perform(...this.#args)
-
-    promise.then(
-      result => {
-        this.#processing.delete(action)
-        console.log('cargo before check', action)
-        this.#check()
-      },
-      this.#onError
-    )
-
-    return promise
+    return action
+    .perform(...this.#args)
+    .catch(this.#onError)
+    .then(result => {
+      this.#processing.delete(action)
+      this.#check()
+      return result
+    })
   }
 
   #check () {
-    console.log('cargo check', this.drained, this.paused)
     if (!this.drained) {
       return
     }

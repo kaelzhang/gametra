@@ -9,17 +9,6 @@ const {
 } = require('..')
 
 
-test('add outside of an event handler', t => {
-  const scheduler = new Scheduler()
-
-  t.throws(() => {
-    scheduler.add(new Action())
-  }, {
-    message: /outside/
-  })
-})
-
-
 test('start master scheduler twice', async t => {
   const scheduler = new Scheduler()
 

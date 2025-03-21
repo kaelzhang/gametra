@@ -11,7 +11,6 @@ const EVENT_START = 'start'
 
 // When the scheduler is idle
 const EVENT_IDLE = 'idle'
-// const EVENT_RESET = 'reset'
 
 // When the scheduler is about to exit (before exiting)
 const EVENT_EXIT = 'exit'
@@ -25,7 +24,6 @@ const EVENT_ERROR = 'error'
 ///////////////////////////////////////////////////////////////
 // For internal use only
 const EVENT_DRAINED = Symbol('drained')
-const EVENT_PAUSED = Symbol('paused')
 ///////////////////////////////////////////////////////////////
 
 
@@ -37,11 +35,8 @@ module.exports = {
 
   EVENT_START,
   EVENT_IDLE,
-  // EVENT_RESET,
   EVENT_EXIT,
   EVENT_FORK,
-  // EVENT_FORKED,
   EVENT_ERROR,
-  EVENT_DRAINED,
-  EVENT_PAUSED
+  EVENT_DRAINED
 }
