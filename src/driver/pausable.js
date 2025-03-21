@@ -1,3 +1,5 @@
+const {inspect} = require('node:util')
+
 const {
   UNDEFINED,
   EVENT_ERROR
@@ -8,6 +10,17 @@ class Pausable {
   #pausePromise
   #pauseResolve
   #listeners = {}
+  #name
+
+  name (name) {
+    this.#name = name
+    return this
+  }
+
+  [inspect.custom] () {
+    const name = this.#name || 'no-name'
+    return `[${this.constructor.name}: ${name}]`
+  }
 
   #getListeners (event) {
     const listeners = this.#listeners[event]

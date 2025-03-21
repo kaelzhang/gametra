@@ -2,7 +2,6 @@ const {
   setTimeout,
   setImmediate
 } = require('node:timers/promises')
-const {inspect} = require('node:util')
 
 const {
   Action,
@@ -17,6 +16,7 @@ const {
   EVENT_IDLE,
   EVENT_EXIT,
   EVENT_FORK,
+  EVENT_BACK,
   EVENT_ERROR,
   EVENT_DRAINED
 } = require('../constants')
@@ -111,7 +111,6 @@ const makeWhen = when => {
 
 class Scheduler extends Pausable {
   #master
-  #name
   #cargo
   #completePromise
   #args
@@ -153,18 +152,8 @@ class Scheduler extends Pausable {
     }
   }
 
-  [inspect.custom] () {
-    const name = this.#name || 'no-name'
-    return `[Scheduler: ${name}]`
-  }
-
   get master () {
     return this.#master
-  }
-
-  name (name) {
-    this.#name = name
-    return this
   }
 
   emit (event, payload) {
@@ -306,7 +295,7 @@ class Scheduler extends Pausable {
       this.resume()
 
       whenever.resume()
-      console.log('after fork')
+      await this.emit(EVENT_BACK)
     })
 
     this.#addWhenever(whenever)

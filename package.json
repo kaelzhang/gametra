@@ -27,7 +27,7 @@
   },
   "ava": {
     "files": [
-      "test/scheduler.test.js"
+      "test/*.test.js"
     ]
   },
   "author": "kaelzhang",

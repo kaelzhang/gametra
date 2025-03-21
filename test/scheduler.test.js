@@ -28,7 +28,6 @@ test('a complex case: pause and resume', async t => {
 
   const scheduler = new Scheduler()
   .on('idle', add => {
-    console.log('idle', action)
     add(action)
   })
   .name('main')
@@ -43,7 +42,6 @@ test('a complex case: pause and resume', async t => {
     async _perform () {
       forkedCount ++
       await setTimeout(100)
-      console.log('forked action completed')
     }
   }
 
@@ -64,7 +62,6 @@ test('a complex case: pause and resume', async t => {
 
   const forked = scheduler.fork(forkCondition)
   .on('idle', add => {
-    console.log('fork idle', actionForForked)
     add(actionForForked)
   })
 
@@ -173,8 +170,8 @@ test.only('forked scheduler error', async t => {
   } = Promise.withResolvers()
 
   const {
-    promise: exitPromise,
-    resolve: resolveExit
+    promise: backPromise,
+    resolve: resolveBack
   } = Promise.withResolvers()
 
   class ErrorAction extends Action {
@@ -200,13 +197,15 @@ test.only('forked scheduler error', async t => {
     master: false
   })
   .on('error', payload => {
-    console.log('error', payload)
     t.is(payload.type, 'action-error')
     t.is(payload.error.message, 'test')
     t.is(payload.scheduler, forked)
   })
   .on('idle', add => {
     add(intervalAction)
+  })
+  .on('back', () => {
+    resolveBack()
   })
 
   let shouldFork = false
@@ -219,9 +218,6 @@ test.only('forked scheduler error', async t => {
   .on('start', add => {
     add(errorAction)
   })
-  .on('exit', () => {
-    resolveExit()
-  })
 
   const fork = () => {
     shouldFork = true
@@ -232,7 +228,7 @@ test.only('forked scheduler error', async t => {
   scheduler.start()
 
   await forkedPromise
-  await exitPromise
+  await backPromise
   scheduler.pause()
 })
 
