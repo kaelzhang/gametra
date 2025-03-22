@@ -71,7 +71,6 @@ class Cargo extends Pausable {
     }
   }
 
-
   #add (action) {
     if (this.paused) {
       action.pause()

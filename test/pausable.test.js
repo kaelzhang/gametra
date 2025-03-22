@@ -4,6 +4,7 @@ const log = require('util').debuglog('gametra')
 const {
   setTimeout
 } = require('node:timers/promises')
+const {inspect} = require('node:util')
 
 const {Pausable} = require('../src/driver/pausable')
 
@@ -15,6 +16,8 @@ test('pausable', async t => {
   const promise = pausable.waitPause()
   pausable.pause()
   pausable.resume()
+
+  t.is(inspect(pausable), '[Pausable: no-name]')
 
   // It could be solved
   await promise
