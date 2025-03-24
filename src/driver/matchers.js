@@ -1,5 +1,4 @@
 const {Jimp} = require('jimp')
-const {ssim} = require('ssim.js')
 
 const {
   Action,
@@ -7,16 +6,12 @@ const {
 } = require('./action')
 
 const {
-  log
+  log,
+  compareImages
 } = require('../util')
 
 
 const DEFAULT_GET_SCREENSHOT = (game, viewport) => game.screenshot(viewport)
-
-const DEFAULT_COMPARE = (from, to) => {
-  const {mssim} = ssim(from, to)
-  return mssim
-}
 
 
 class ImageMatcher extends Action {
@@ -34,7 +29,7 @@ class ImageMatcher extends Action {
     to,
     {
       getScreenshot = DEFAULT_GET_SCREENSHOT,
-      compare = DEFAULT_COMPARE
+      compare = compareImages
     } = {}
   ) {
     super()

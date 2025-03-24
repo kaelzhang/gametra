@@ -1,6 +1,7 @@
 const log = require('node:util').debuglog('gametra')
 
 const {Jimp} = require('jimp')
+const {ssim} = require('ssim.js')
 
 const {
   UNDEFINED
@@ -77,10 +78,17 @@ class NotImplementedError extends Error {
 }
 
 
+const compareImages = (from, to) => {
+  const {mssim} = ssim(from, to)
+  return mssim
+}
+
+
 module.exports = {
   log,
   Viewport,
   Point,
+  compareImages,
   encodeNativeBMPImage,
   NotImplementedError
 }

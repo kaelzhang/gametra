@@ -1,6 +1,9 @@
 const {Game} = require('./driver/game')
 const {ElectronDelegate} = require('./delegate/electron')
-const {Viewport} = require('./util')
+const {
+  Viewport,
+  compareImages
+} = require('./util')
 const {
   Action
 } = require('./driver/action')
@@ -27,5 +30,6 @@ module.exports = {
   ImageMatcher,
   ElectronDelegate,
   Viewport,
+  compareImages,
   Scheduler
 }
