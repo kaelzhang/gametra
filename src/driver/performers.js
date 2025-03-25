@@ -206,10 +206,10 @@ class IntervalPerformer extends Pausable {
 
 class SharedPerformer extends Pausable {
   #resultPromise
-  #resultResolve
+  #resultResolve = NOOP
 
-  constructor () {
-    super()
+  cancel () {
+    this.#resolve()
   }
 
   #resolve (result) {
@@ -218,26 +218,27 @@ class SharedPerformer extends Pausable {
     this.#resultPromise = UNDEFINED
   }
 
-  cancel () {
-    this.#resolve()
-  }
-
   async perform (perform, ...args) {
-    if (!this.#resultPromise) {
-      this.#perform(perform, ...args)
+    if (this.#resultPromise) {
+      return this.#resultPromise
     }
 
-    return this.#resultPromise
-  }
+    this.#resultPromise = perform(...args)
 
-  #perform (perform, ...args) {
     const {promise, resolve} = Promise.withResolvers()
-    this.#resultPromise = promise
     this.#resultResolve = resolve
 
-    perform(...args).then(result => {
-      this.#resolve(result)
-    })
+    let result
+
+    try {
+      result = await this.#resultPromise
+    } catch (error) {
+      this.#resolve()
+      throw error
+    }
+
+    this.#resolve(result)
+    return promise
   }
 }
 

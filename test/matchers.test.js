@@ -4,12 +4,18 @@ const {join} = require('node:path')
 
 const {
   ImageMatcher,
-  Viewport
+  Viewport,
+  SharedPerformer,
+  ThrottledPerformer
 } = require('..')
 
 
 test('image matcher', async t => {
-  const matcher = new ImageMatcher(
+  class _ImageMatcher extends ImageMatcher {
+    static PERFORMER = [SharedPerformer]
+  }
+
+  const matcher = new _ImageMatcher(
     new Viewport(0, 0, 100, 100),
     [
       join(__dirname, 'fixtures', 'ds.bmp'),
