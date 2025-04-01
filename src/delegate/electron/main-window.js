@@ -51,6 +51,13 @@ const selectionMask = new Element(() => {
   return element
 })
 
+// Add a new independent overlay for the capture inputs
+const captureOverlay = new Element(() => {
+  const element = document.createElement('div')
+  element.className = 'gametra-capture-overlay'
+  return element
+})
+
 // Create and inject selection overlay styles
 const style = document.createElement('style')
 const STYLE_ID = 'gametra-region-select-overlay-style'
@@ -70,6 +77,14 @@ style.textContent = `
     width: 100%;
     height: 100%;
     z-index: 9998;
+  }
+
+  .gametra-capture-overlay {
+    position: fixed;
+    border: 2px dashed #ff5500;
+    pointer-events: none;
+    z-index: 9997;
+    background-color: rgba(255, 85, 0, 0.1);
   }
 `
 
@@ -93,10 +108,25 @@ function updateSelectionOverlay(startX, startY, endX, endY) {
   })
 }
 
-// Remove selection overlay
-function removeSelectionOverlay() {
-  selectionOverlay.hide()
+// Add a function to update the capture overlay based on input values
+function updateCaptureOverlay(x, y, width, height) {
+  if (x === undefined || y === undefined) {
+    captureOverlay.hide()
+    return
+  }
+
+  // Default to 100px if width or height is not provided
+  const finalWidth = width || 100
+  const finalHeight = height || 100
+
+  captureOverlay.perform(element => {
+    element.style.left = `${x - 2}px`
+    element.style.top = `${y - 2}px`
+    element.style.width = `${finalWidth}px`
+    element.style.height = `${finalHeight}px`
+  })
 }
+
 
 window.addEventListener('click', e => {
   if (!isCapturing && !isPickingPixel) {
@@ -181,5 +211,10 @@ const togglePixelPickerMode = enable => {
 
 ipcRenderer.on('pixel-picker-mode-change', (event, enable) => {
   togglePixelPickerMode(enable)
+})
+
+// Add a listener for capture input changes from the control panel
+ipcRenderer.on('update-capture-overlay', (event, { x, y, width, height }) => {
+  updateCaptureOverlay(x, y, width, height)
 })
 

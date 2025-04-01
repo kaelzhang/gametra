@@ -142,3 +142,39 @@ jumpBtn.addEventListener('click', () => {
 setBotDeviceBtn.addEventListener('click', () => {
   ipcRenderer.send('custom-event', 'set-bot-device')
 })
+
+// Add event listeners to update the capture overlay when inputs change
+function updateCaptureOverlay() {
+  const x = captureXInput.value ? parseInt(captureXInput.value, 10) : undefined
+  const y = captureYInput.value ? parseInt(captureYInput.value, 10) : undefined
+  const width = captureWidthInput.value ? parseInt(captureWidthInput.value, 10) : undefined
+  const height = captureHeightInput.value ? parseInt(captureHeightInput.value, 10) : undefined
+
+  ipcRenderer.send('update-capture-overlay', { x, y, width, height })
+}
+
+// Create a simple throttle function since 'shared' is not available
+function throttle(func, delay) {
+  let lastCall = 0;
+  return function(...args) {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      func.apply(this, args);
+    }
+  };
+}
+
+// Throttle the update function to avoid excessive updates
+const throttledUpdate = throttle(updateCaptureOverlay, 100);
+
+// Add input event listeners
+captureXInput.addEventListener('input', throttledUpdate)
+captureYInput.addEventListener('input', throttledUpdate)
+captureWidthInput.addEventListener('input', throttledUpdate)
+captureHeightInput.addEventListener('input', throttledUpdate)
+
+// Initialize the overlay with current values when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  throttledUpdate()
+})

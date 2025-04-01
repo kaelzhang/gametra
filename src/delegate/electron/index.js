@@ -176,6 +176,7 @@ class ElectronDelegate extends EventEmitter {
     const mainWindow = this.#mainWindow = new BrowserWindow({
       width,
       height,
+      useContentSize: true,
       webPreferences,
       resizable: false
     })
@@ -385,6 +386,12 @@ class ElectronDelegate extends EventEmitter {
 
     ipcMain.on('custom-event', (event, name, payload) => {
       this.emit(name, payload)
+    })
+
+    ipcMain.on('update-capture-overlay', (event, bounds) => {
+      log('received "update-capture-overlay" from control panel')
+      // Forward the message to the main window
+      this.#mainWindow.webContents.send('update-capture-overlay', bounds)
     })
 
     // Sent from the main window
