@@ -96,6 +96,7 @@ class ElectronDelegate extends EventEmitter {
     return join(this.#downloadPath, '.storage.json')
   }
 
+  // TODO: methods related to storage should not be in delegate
   async updateStorage (updater) {
     const filepath = this.#getStoragePath()
     let storage = {}

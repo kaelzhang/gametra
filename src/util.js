@@ -84,11 +84,37 @@ const compareImages = (from, to) => {
 }
 
 
+class ForkChain {
+  #chain
+
+  constructor (chain = []) {
+    this.#chain = chain
+  }
+
+  test (node) {
+    const index = this.#chain.indexOf(node)
+
+    if (index === -1) {
+      return
+    }
+
+    return this.#chain.slice(index)
+  }
+
+  push (node) {
+    const chain = [].concat(this.#chain)
+    chain.push(node)
+    return new ForkChain(chain)
+  }
+}
+
+
 module.exports = {
   log,
   Viewport,
   Point,
   compareImages,
   encodeNativeBMPImage,
-  NotImplementedError
+  NotImplementedError,
+  ForkChain
 }

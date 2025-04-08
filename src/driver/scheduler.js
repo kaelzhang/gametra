@@ -22,6 +22,10 @@ const {
   EVENT_DRAINED
 } = require('../constants')
 
+const {
+  ForkChain
+} = require('../util')
+
 const MIN_INTERVAL = 20
 
 
@@ -112,6 +116,7 @@ class Whenever extends Pausable {
 
 class Scheduler extends Pausable {
   #master
+  #errorSubscribed = false
   #cargo
   #completePromise
   #args
@@ -122,6 +127,7 @@ class Scheduler extends Pausable {
   #cargoResolve = UNDEFINED
   #whenevers = new Set()
   #forked = UNDEFINED
+  #forkChain = new ForkChain()
   #addAction
   #performAction
 
@@ -148,8 +154,21 @@ class Scheduler extends Pausable {
     }
   }
 
+  updateForkChain (chain) {
+    this.#forkChain = chain
+  }
+
   get master () {
     return this.#master
+  }
+
+  onErrorOnce (handler) {
+    if (this.#errorSubscribed) {
+      return
+    }
+
+    this.#errorSubscribed = true
+    this.once(EVENT_ERROR, handler)
   }
 
   emit (event, payload) {
@@ -172,6 +191,12 @@ class Scheduler extends Pausable {
   #reset () {
     this.#cargo.reset()
     this.pause()
+  }
+
+  // Reset the scheduler,
+  // clean all actions, and emit the idle event
+  reset () {
+
   }
 
   pause () {
@@ -206,6 +231,10 @@ class Scheduler extends Pausable {
 
   #add (...actions) {
     this.#cargo.add(...actions)
+  }
+
+  #clean (...actions) {
+    this.#cargo.clean(...actions)
   }
 
   #perform (...actions) {
@@ -261,6 +290,18 @@ class Scheduler extends Pausable {
   }
 
   // Create a forked branch of the scheduler
+  // A:
+  // If the fork chain is:
+  // A --fork--> B --fork--> C
+  // =>
+  // - C --back--> B --back--> A
+
+  // A:
+  // If the fork chain is:
+  // A --fork--> B --fork --> C --fork--> A
+  // =>
+  // - reset, B, C
+  // - resume A
   #fork (
     when,
     // Two scheduler should fork into a same scheduler,
@@ -269,43 +310,58 @@ class Scheduler extends Pausable {
       master: false
     })
   ) {
-    if (scheduler.master) {
-      throw new Error('A scheduler should not fork into a master scheduler')
-    }
-
-    // TODO: Test circular dependency
-    if (scheduler === this) {
-      throw new Error(
-        'A scheduler should not fork into itself'
-      )
-    }
-
     const whenever = new Whenever(when).then(async () => {
-      // We could do something before the forked scheduler starts
-      await this.#emitAsync(EVENT_FORK)
-
-      // Pause the parent scheduler,
-      // which will also pause the whenever
-      this.pause()
-
-      this.#forked = scheduler
-      await scheduler.start(...this.#args)
-      this.#forked = UNDEFINED
-
-      // Resume the parent scheduler
-      this.resume()
-
-      whenever.resume()
-      await this.#emitAsync(EVENT_BACK)
+      await this.#forkTo(scheduler)
     })
 
     this.#addWhenever(whenever)
 
-    scheduler.on(EVENT_ERROR, errorInfo => {
+    scheduler.onErrorOnce(errorInfo => {
       this.emit(EVENT_ERROR, errorInfo)
     })
 
     return scheduler
+  }
+
+  async #forkTo (target) {
+    // We could do something before the forked scheduler starts
+    await this.#emitAsync(EVENT_FORK)
+
+    const circular = this.#forkChain.test(target)
+
+    if (circular) {
+      // If the fork chain is circular,
+      // we should reset all the nodes in the chain
+      for (const node of circular) {
+        node.reset()
+      }
+
+      // If the fork chain is circular,
+      // we should back to the target scheduler
+      this.#backTo(target)
+      return
+    }
+
+    const chain = this.#forkChain.push(this)
+    target.updateForkChain(chain)
+
+    // Pause the parent scheduler,
+    // which will also pause the whenever
+    this.pause()
+
+    this.#forked = target
+    await target.start(...this.#args)
+    this.#forked = UNDEFINED
+
+    // Resume the parent scheduler
+    this.resume()
+
+    whenever.resume()
+    await this.#emitAsync(EVENT_BACK)
+  }
+
+  async #backTo (target) {
+
   }
 
   exit (when) {
@@ -409,6 +465,7 @@ class Scheduler extends Pausable {
         return
       }
 
+      // Else we should reset the cargo
       this.#cargo.reset()
       this.#releaseCargo()
     }
