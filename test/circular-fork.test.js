@@ -45,7 +45,7 @@ test('fork into itself', async t => {
     add(action)
   })
 
-  scheduler.fork(condition, scheduler)
+  scheduler.fork(condition, {scheduler})
 
   fork()
 
@@ -162,7 +162,9 @@ test('fork into master', async t => {
   // Dead fork
   sub.fork(async () => {
     return false
-  }, sub)
+  }, {
+    scheduler: sub
+  })
 
   const sub2Action = createAction(async () => {
     await setTimeout(100)
@@ -183,7 +185,9 @@ test('fork into master', async t => {
 
   sub2.fork(async () => {
     return true
-  }, master)
+  }, {
+    scheduler: master
+  })
 
   master.start()
 

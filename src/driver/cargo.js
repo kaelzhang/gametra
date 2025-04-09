@@ -9,7 +9,8 @@ const {
   EVENT_ERROR,
   EVENT_DRAINED,
 
-  DO_EMIT
+  DO_EMIT,
+  KEY_REMOVE_ALL_LISTENERS
 } = require('../constants')
 
 
@@ -62,7 +63,7 @@ class Cargo extends Pausable {
   // Reset the cargo to the initial state
   reset () {
     this.clean()
-    this.removeAllListeners()
+    this[KEY_REMOVE_ALL_LISTENERS]()
     this.pause()
   }
 

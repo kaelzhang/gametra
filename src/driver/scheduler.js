@@ -16,16 +16,12 @@ const {
 
   EVENT_START,
   EVENT_IDLE,
-  EVENT_EXIT,
-  EVENT_FORK,
-  EVENT_BACK,
   EVENT_ERROR,
   EVENT_DRAINED,
 
   DO_EXIT,
   DO_RESET,
   DO_EMIT,
-  DO_EMIT_ASYNC,
   ON_ERROR_ONCE,
   KEY_GET_NAME
 } = require('../constants')
@@ -188,10 +184,6 @@ class Scheduler extends Pausable {
     return super[DO_EMIT](event, this.#addAction)
   }
 
-  #emitAsync (event) {
-    return super[DO_EMIT_ASYNC](event, this.#performAction)
-  }
-
   // @friendly
   // Reset the scheduler,
   // so that the scheduler returns back to the status that it was just started.
@@ -307,10 +299,6 @@ class Scheduler extends Pausable {
     }
   }
 
-  fork (when, ...rest) {
-    return this.#fork(when, ...rest)
-  }
-
   // Create a forked branch of the scheduler
   // A:
   // If the fork chain is:
@@ -324,16 +312,19 @@ class Scheduler extends Pausable {
   // =>
   // - reset, B, C
   // - resume A
-  #fork (
+  fork (
     when,
-    // Two scheduler should fork into a same scheduler,
-    // otherwise, a new scheduler will be created
-    scheduler = new Scheduler({
-      master: false
-    })
+    {
+      // Two schedulers could fork into a same scheduler
+      scheduler = new Scheduler({
+        master: false
+      }),
+      onFork,
+      onBack
+    } = {}
   ) {
     const whenever = new Whenever(when).then(async () => {
-      await this.#forkTo(scheduler)
+      await this.#forkTo(scheduler, onFork, onBack)
     })
     .name(this[KEY_GET_NAME])
 
@@ -346,9 +337,24 @@ class Scheduler extends Pausable {
     return scheduler
   }
 
-  async #forkTo (target) {
-    // We could do something before the forked scheduler starts
-    await this.#emitAsync(EVENT_FORK)
+  async #performEventHandler (handler, errorType) {
+    if (!handler) {
+      return
+    }
+
+    try {
+      await handler(this.#performAction)
+    } catch (error) {
+      const errorInfo = createErrorInfo(error)
+      this[DO_EMIT](EVENT_ERROR, {
+        ...errorInfo,
+        type: errorType
+      })
+    }
+  }
+
+  async #forkTo (target, onFork, onBack) {
+    await this.#performEventHandler(onFork, 'onFork-error')
 
     const circular = this.#forkChain.test(this, target)
 
@@ -380,7 +386,7 @@ class Scheduler extends Pausable {
     // Resume the parent scheduler
     this.resume()
 
-    await this.#emitAsync(EVENT_BACK)
+    await this.#performEventHandler(onBack, 'onBack-error')
   }
 
   // Register an exit condition
@@ -453,9 +459,6 @@ class Scheduler extends Pausable {
       this.#startCargo(),
       this.#waitExit()
     ])
-
-    // We could do something before the scheduler completely exits
-    await this.#emitAsync(EVENT_EXIT)
 
     this.pause()
 

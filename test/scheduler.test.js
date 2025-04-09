@@ -203,9 +203,6 @@ test.only('forked scheduler error', async t => {
   .on('idle', add => {
     add(intervalAction)
   })
-  .on('back', () => {
-    resolveBack()
-  })
 
   let shouldFork = false
   let exitCount = 0
@@ -214,14 +211,16 @@ test.only('forked scheduler error', async t => {
     const result = shouldFork
     shouldFork = false
     return result
+  }, {
+    async onBack (perform) {
+      await perform(createAction(() => {
+        exitCount ++
+      }))
+      resolveBack()
+    }
   })
   .on('start', add => {
     add(errorAction)
-  })
-  .on('exit', async perform => {
-    await perform(createAction(() => {
-      exitCount ++
-    }))
   })
 
   const fork = () => {

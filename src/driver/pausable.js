@@ -4,9 +4,13 @@ const {
   UNDEFINED,
   EVENT_ERROR,
   DO_EMIT,
-  DO_EMIT_ASYNC,
-  KEY_GET_NAME
+  KEY_GET_NAME,
+  KEY_REMOVE_ALL_LISTENERS
 } = require('../constants')
+
+const {
+  createErrorInfo
+} = require('../util')
 
 
 class Pausable {
@@ -45,18 +49,8 @@ class Pausable {
     return this
   }
 
-  off (event, fn) {
-    this.#getListeners(event).splice(this.#getListeners(event).indexOf(fn), 1)
-    return this
-  }
-
-  removeAllListeners (event) {
-    if (event === UNDEFINED) {
-      this.#listeners = {}
-    } else {
-      this.#getListeners(event).length = 0
-    }
-
+  [KEY_REMOVE_ALL_LISTENERS] () {
+    this.#listeners = {}
     return this
   }
 
@@ -77,8 +71,10 @@ class Pausable {
     return this.#emitSync(event, ...args)
   }
 
-  #emitError (errorInfo) {
+  #emitError (raw) {
     const listeners = this.#getListeners(EVENT_ERROR)
+
+    const errorInfo = createErrorInfo(raw)
 
     // Try not to override the host as mush as possible
     const host = errorInfo.host || this
@@ -95,26 +91,6 @@ class Pausable {
     listeners.forEach(fn => {
       fn(...args)
     })
-
-    return !!listeners.length
-  }
-
-  async [DO_EMIT_ASYNC] (event, ...args) {
-    await this.waitPause()
-
-    const listeners = this.#getListeners(event)
-
-    await Promise.all(
-      listeners.map(async fn => {
-        try {
-          await fn(...args)
-        } catch (error) {
-          this[DO_EMIT](EVENT_ERROR, {
-            error
-          })
-        }
-      })
-    )
 
     return !!listeners.length
   }

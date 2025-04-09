@@ -117,6 +117,15 @@ class ForkChain {
 }
 
 
+const createErrorInfo = raw => raw
+  ? raw instanceof Error
+    ? {
+      error: raw
+    }
+    : raw
+  : {}
+
+
 module.exports = {
   log,
   Viewport,
@@ -124,5 +133,6 @@ module.exports = {
   compareImages,
   encodeNativeBMPImage,
   NotImplementedError,
-  ForkChain
+  ForkChain,
+  createErrorInfo
 }

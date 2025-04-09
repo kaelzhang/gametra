@@ -93,9 +93,6 @@ test('scheduler async event error', async t => {
   const {promise, resolve} = Promise.withResolvers()
 
   const scheduler = new Scheduler()
-  .on('back', async perform => {
-    await perform(errorAction)
-  })
   .on('error', errorInfo => {
     const {error, host} = errorInfo
 
@@ -104,7 +101,11 @@ test('scheduler async event error', async t => {
     resolve()
   })
 
-  scheduler.fork(forkCondition)
+  scheduler.fork(forkCondition, {
+    async onBack (perform) {
+      await perform(errorAction)
+    }
+  })
 
   scheduler.start()
   await promise
