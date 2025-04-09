@@ -94,10 +94,11 @@ test('scheduler async event error', async t => {
 
   const scheduler = new Scheduler()
   .on('error', errorInfo => {
-    const {error, host} = errorInfo
+    const {error, host, type} = errorInfo
 
     t.is(error.message, 'test')
     t.is(host, errorAction)
+    t.is(type, 'action-error')
     resolve()
   })
 
@@ -108,6 +109,39 @@ test('scheduler async event error', async t => {
   })
 
   scheduler.start()
+  await promise
+  scheduler.pause()
+})
+
+
+test('scheduler onFork error', async t => {
+  const {promise, resolve} = Promise.withResolvers()
+
+  const scheduler = new Scheduler()
+  .on('error', ({error, type}) => {
+    t.is(error.message, 'test')
+    t.is(type, 'onFork-error')
+  })
+
+  let forked = false
+
+  scheduler.fork(async () => {
+    await setTimeout(10)
+    if (forked) {
+      return
+    }
+
+    forked = true
+    return true
+  }, {
+    async onFork () {
+      throw new Error('test')
+    },
+    onBack: resolve
+  })
+
+  scheduler.start()
+
   await promise
   scheduler.pause()
 })

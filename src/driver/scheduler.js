@@ -27,7 +27,8 @@ const {
 } = require('../constants')
 
 const {
-  ForkChain
+  ForkChain,
+  createErrorInfo
 } = require('../util')
 
 const MIN_INTERVAL = 20
