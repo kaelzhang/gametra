@@ -81,6 +81,8 @@ class Cargo extends Pausable {
   #add (action) {
     if (this.paused) {
       action.pause()
+    } else if (action.paused) {
+      action.resume()
     }
 
     this.#processing.add(action)

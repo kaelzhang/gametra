@@ -351,7 +351,7 @@ class Scheduler extends Pausable {
     // We could do something before the forked scheduler starts
     await this.#emitAsync(EVENT_FORK)
 
-    const circular = this.#forkChain.test(target)
+    const circular = this.#forkChain.test(this, target)
 
     if (circular) {
       target[DO_RESET]()

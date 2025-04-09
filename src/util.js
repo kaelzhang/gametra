@@ -85,24 +85,32 @@ const compareImages = (from, to) => {
 
 
 class ForkChain {
-  #chain
+  #previous
 
   constructor (chain = []) {
-    this.#chain = chain
+    this.#previous = chain
   }
 
-  test (node) {
-    const index = this.#chain.indexOf(node)
+  get #chain () {
+    return [].concat(this.#previous)
+  }
+
+  // ForkChain represents the chain of nodes that before the current node,
+  test (current, target) {
+    const chain = this.#chain
+    chain.push(current)
+
+    const index = chain.indexOf(target)
 
     if (index === -1) {
       return
     }
 
-    return this.#chain.slice(index)
+    return chain.slice(index)
   }
 
   push (node) {
-    const chain = [].concat(this.#chain)
+    const chain = this.#chain
     chain.push(node)
     return new ForkChain(chain)
   }

@@ -37,7 +37,15 @@ const createAction = (perform, performer, PERFORMER_OPTIONS) => {
     static PERFORMER_OPTIONS = PERFORMER_OPTIONS
 
     async _perform (...args) {
-      return perform(...args)
+      // So that we could create an action by:
+      // ```
+      // createAction (async function () {
+      //   if (!this.paused) {
+      //     // Do something
+      //   }
+      // })
+      // ```
+      return perform.call(this, ...args)
     }
   }
 

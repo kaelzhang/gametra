@@ -1,6 +1,5 @@
 const test = require('ava')
 const {inspect} = require('node:util')
-const log = require('node:util').debuglog('gametra')
 
 const {setTimeout} = require('node:timers/promises')
 
