@@ -2,7 +2,9 @@ const {inspect} = require('node:util')
 
 const {
   UNDEFINED,
-  EVENT_ERROR
+  EVENT_ERROR,
+  DO_EMIT,
+  DO_EMIT_ASYNC
 } = require('../constants')
 
 
@@ -56,7 +58,7 @@ class Pausable {
   // ```
   // this.emit('error', {error})
   // ```
-  emit (event, ...args) {
+  [DO_EMIT] (event, ...args) {
     if (event === EVENT_ERROR) {
       // Emit error immediately without `await waitPause()`
       return this.#emitError(...args)
@@ -92,7 +94,7 @@ class Pausable {
     return !!listeners.length
   }
 
-  async emitAsync (event, ...args) {
+  async [DO_EMIT_ASYNC] (event, ...args) {
     await this.waitPause()
 
     const listeners = this.#getListeners(event)
@@ -102,7 +104,7 @@ class Pausable {
         try {
           await fn(...args)
         } catch (error) {
-          this.emit(EVENT_ERROR, {
+          this[DO_EMIT](EVENT_ERROR, {
             error
           })
         }

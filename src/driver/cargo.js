@@ -7,7 +7,9 @@ const {Pausable} = require('./pausable')
 const {
   NOOP,
   EVENT_ERROR,
-  EVENT_DRAINED
+  EVENT_DRAINED,
+
+  DO_EMIT
 } = require('../constants')
 
 
@@ -51,10 +53,15 @@ class Cargo extends Pausable {
     super.resume()
   }
 
-  // Reset the cargo to the initial state
-  reset () {
+  // Cancel and remove all actions
+  clean () {
     this.#apply('cancel')
     this.#processing.clear()
+  }
+
+  // Reset the cargo to the initial state
+  reset () {
+    this.clean()
     this.removeAllListeners()
     this.pause()
   }
@@ -99,7 +106,7 @@ class Cargo extends Pausable {
       return
     }
 
-    this.emit(EVENT_DRAINED)
+    this[DO_EMIT](EVENT_DRAINED)
   }
 }
 

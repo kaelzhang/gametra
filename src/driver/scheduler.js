@@ -13,13 +13,19 @@ const {createAction} = require('./tools')
 
 const {
   UNDEFINED,
+
   EVENT_START,
   EVENT_IDLE,
   EVENT_EXIT,
   EVENT_FORK,
   EVENT_BACK,
   EVENT_ERROR,
-  EVENT_DRAINED
+  EVENT_DRAINED,
+
+  DO_EXIT,
+  DO_RESET,
+  DO_EMIT,
+  DO_EMIT_ASYNC
 } = require('../constants')
 
 const {
@@ -89,7 +95,7 @@ class Whenever extends Pausable {
       try {
         yes = await when.perform(...this.#args)
       } catch (error) {
-        this.emit(EVENT_ERROR, {
+        this[DO_EMIT](EVENT_ERROR, {
           type: 'whenever-error',
           error,
           host: when
@@ -122,7 +128,7 @@ class Scheduler extends Pausable {
   #args
   #inited = false
   #hasExit = false
-  #exited = false
+  #exited = true
   #exitResolve = UNDEFINED
   #cargoResolve = UNDEFINED
   #whenevers = new Set()
@@ -141,7 +147,7 @@ class Scheduler extends Pausable {
 
     this.#cargo = new Cargo()
     .onError(error => {
-      this.emit(EVENT_ERROR, error)
+      this[DO_EMIT](EVENT_ERROR, error)
     })
 
     this.#master = master
@@ -171,34 +177,53 @@ class Scheduler extends Pausable {
     this.once(EVENT_ERROR, handler)
   }
 
-  emit (event, payload) {
+  [DO_EMIT] (event, payload) {
     if (event === EVENT_ERROR) {
       const scheduler = payload.scheduler || this
 
-      return super.emit(event, {
+      return super[DO_EMIT](event, {
         ...payload,
         scheduler
       })
     }
 
-    return super.emit(event, this.#addAction)
+    return super[DO_EMIT](event, this.#addAction)
   }
 
   #emitAsync (event) {
-    return super.emitAsync(event, this.#performAction)
+    return super[DO_EMIT_ASYNC](event, this.#performAction)
   }
 
-  #reset () {
-    this.#cargo.reset()
-    this.pause()
-  }
-
+  // @friendly
   // Reset the scheduler,
-  // clean all actions, and emit the idle event
-  reset () {
-
+  // so that the scheduler returns back to the status that it was just started.
+  // Calling reset() will not make `await scheduler.start()` to be resolved.
+  [DO_RESET] () {
+    this.#cargo.clean()
+    this.#forked = UNDEFINED
+    this[DO_EMIT](EVENT_START)
+    this[DO_EMIT](EVENT_IDLE)
+    this.resume()
   }
 
+  // #@friendly
+  // Exit the scheduler,
+  // so that the scheduler is stopped.
+  // Calling exit() will make `await scheduler.start()` to be resolved.
+  [DO_EXIT] () {
+    this.#exited = true
+    this.#releaseCargo()
+
+    // There might be multiple exit actions,
+    // we should not resolve it again when it is already resolved
+    if (this.#exitResolve) {
+      this.#exitResolve()
+    }
+  }
+
+  // Pause the scheduler, which will also pause
+  // - whenevers
+  // - all actions
   pause () {
     if (this.#forked) {
       // If we call pause() when the current scheduler is forked,
@@ -214,6 +239,9 @@ class Scheduler extends Pausable {
     super.pause()
   }
 
+  // Resume the scheduler, which will also resume
+  // - whenevers
+  // - all actions
   resume () {
     if (this.#forked) {
       // If the current scheduler is forked,
@@ -233,15 +261,11 @@ class Scheduler extends Pausable {
     this.#cargo.add(...actions)
   }
 
-  #clean (...actions) {
-    this.#cargo.clean(...actions)
-  }
-
   #perform (...actions) {
     return Promise.all(
       actions.map(
         action => action.perform(...this.#args).catch(error => {
-          this.emit(EVENT_ERROR, {
+          this[DO_EMIT](EVENT_ERROR, {
             type: 'action-error',
             error,
             host: action
@@ -255,7 +279,7 @@ class Scheduler extends Pausable {
     this.#whenevers.add(whenever)
 
     whenever.on(EVENT_ERROR, error => {
-      this.emit(EVENT_ERROR, error)
+      this[DO_EMIT](EVENT_ERROR, error)
     })
 
     if (this.paused) {
@@ -317,7 +341,7 @@ class Scheduler extends Pausable {
     this.#addWhenever(whenever)
 
     scheduler.onErrorOnce(errorInfo => {
-      this.emit(EVENT_ERROR, errorInfo)
+      this[DO_EMIT](EVENT_ERROR, errorInfo)
     })
 
     return scheduler
@@ -330,15 +354,12 @@ class Scheduler extends Pausable {
     const circular = this.#forkChain.test(target)
 
     if (circular) {
-      // If the fork chain is circular,
-      // we should reset all the nodes in the chain
-      for (const node of circular) {
-        node.reset()
+      target[DO_RESET]()
+
+      for (const node of circular.slice(1)) {
+        node[DO_EXIT]()
       }
 
-      // If the fork chain is circular,
-      // we should back to the target scheduler
-      this.#backTo(target)
       return
     }
 
@@ -353,17 +374,17 @@ class Scheduler extends Pausable {
     await target.start(...this.#args)
     this.#forked = UNDEFINED
 
+    if (this.#exited) {
+      return
+    }
+
     // Resume the parent scheduler
     this.resume()
 
-    whenever.resume()
     await this.#emitAsync(EVENT_BACK)
   }
 
-  async #backTo (target) {
-
-  }
-
+  // Register an exit condition
   exit (when) {
     if (this.#master) {
       throw new Error('The master scheduler should not exit')
@@ -374,23 +395,9 @@ class Scheduler extends Pausable {
     return this
   }
 
-  #doExit () {
-    // There might be multiple exit actions,
-    // we should not resolve it again when it is already resolved
-    if (this.#exitResolve) {
-      this.#exitResolve()
-    }
-  }
-
-  // Restart the scheduler,
-  // clean all actions, and emit the idle event
   #registerExit (when) {
     const whenever = new Whenever(when).then(() => {
-      this.#exited = true
-      this.#cargo.reset()
-      this.#releaseCargo()
-      this.#doExit()
-
+      this[DO_EXIT]()
       whenever.resume()
     })
 
@@ -431,8 +438,8 @@ class Scheduler extends Pausable {
 
     this.resume()
 
-    this.emit(EVENT_START)
-    this.emit(EVENT_IDLE)
+    this[DO_EMIT](EVENT_START)
+    this[DO_EMIT](EVENT_IDLE)
 
     this.#exited = false
 
@@ -444,7 +451,7 @@ class Scheduler extends Pausable {
     // We could do something before the scheduler completely exits
     await this.#emitAsync(EVENT_EXIT)
 
-    this.#reset()
+    this.pause()
 
     resolve()
     this.#completePromise = UNDEFINED
@@ -461,12 +468,10 @@ class Scheduler extends Pausable {
         // Or it is the master scheduler
         || this.#master
       ) {
-        this.emit(EVENT_IDLE)
+        this[DO_EMIT](EVENT_IDLE)
         return
       }
 
-      // Else we should reset the cargo
-      this.#cargo.reset()
       this.#releaseCargo()
     }
 
@@ -478,6 +483,8 @@ class Scheduler extends Pausable {
   }
 
   #releaseCargo () {
+    this.#cargo.reset()
+
     if (this.#cargoResolve) {
       this.#cargoResolve()
       this.#cargoResolve = UNDEFINED

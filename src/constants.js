@@ -27,6 +27,12 @@ const EVENT_DRAINED = Symbol('drained')
 ///////////////////////////////////////////////////////////////
 
 
+const DO_EXIT = Symbol('#doExit')
+const DO_RESET = Symbol('#doReset')
+const DO_EMIT = Symbol('#doEmit')
+const DO_EMIT_ASYNC = Symbol('#doEmitAsync')
+
+
 module.exports = {
   USERAGENT_CHROME,
   UNDEFINED,
@@ -39,5 +45,10 @@ module.exports = {
   EVENT_FORK,
   EVENT_BACK,
   EVENT_ERROR,
-  EVENT_DRAINED
+  EVENT_DRAINED,
+
+  DO_EXIT,
+  DO_RESET,
+  DO_EMIT,
+  DO_EMIT_ASYNC
 }
