@@ -157,9 +157,7 @@ test('fork into master', async t => {
   .on('idle', add => {
     add(subIdleAction)
   })
-  .exit(async () => {
-    return false
-  })
+  .exit(false)
 
   // Dead fork
   sub.fork(async () => {

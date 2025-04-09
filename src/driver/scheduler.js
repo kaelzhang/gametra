@@ -390,7 +390,13 @@ class Scheduler extends Pausable {
     }
 
     this.#hasExit = true
-    this.#registerExit(makeWhen(when))
+
+    // set `scheduler.exit(false)`
+    // to make a scheduler never exit due to no actions
+    if (when !== false) {
+      this.#registerExit(makeWhen(when))
+    }
+
     return this
   }
 
