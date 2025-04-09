@@ -4,7 +4,8 @@ const {
   UNDEFINED,
   EVENT_ERROR,
   DO_EMIT,
-  DO_EMIT_ASYNC
+  DO_EMIT_ASYNC,
+  KEY_GET_NAME
 } = require('../constants')
 
 
@@ -18,6 +19,10 @@ class Pausable {
   name (name) {
     this.#name = name
     return this
+  }
+
+  get [KEY_GET_NAME] () {
+    return this.#name
   }
 
   [inspect.custom] () {

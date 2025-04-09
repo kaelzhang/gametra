@@ -68,7 +68,20 @@ test('fork into master', async t => {
 
   let masterIdleCount = 0
 
-  const {promise, resolve} = Promise.withResolvers()
+  const {
+    promise: masterPromise,
+    resolve: masterResolve
+  } = Promise.withResolvers()
+
+  const {
+    promise: masterActionPromise,
+    resolve: masterActionResolve
+  } = Promise.withResolvers()
+
+  const {
+    promise: subActionPromise,
+    resolve: subActionResolve
+  } = Promise.withResolvers()
 
   const masterIdleAction = createAction(async function () {
     await setTimeout(40)
@@ -78,12 +91,16 @@ test('fork into master', async t => {
     }
 
     if (masterIdleCount >= 4) {
-      resolve()
+      masterResolve()
       return
     }
 
     masterIdleCount ++
     actions.push(2)
+
+    if (masterIdleCount === 2) {
+      masterActionResolve()
+    }
   })
   .queue(true)
 
@@ -93,6 +110,8 @@ test('fork into master', async t => {
   })
   .queue(true)
 
+  let subIdleCount = 0
+
   const subIdleAction = createAction(async function () {
     await setTimeout(40)
 
@@ -100,7 +119,12 @@ test('fork into master', async t => {
       return
     }
 
+    subIdleCount ++
     actions.push(4)
+
+    if (subIdleCount === 2) {
+      subActionResolve()
+    }
   })
   .queue(true)
 
@@ -116,7 +140,7 @@ test('fork into master', async t => {
   let masterForked = false
 
   const sub = master.fork(async () => {
-    await setTimeout(100)
+    await masterActionPromise
 
     if (masterForked) {
       return
@@ -133,15 +157,7 @@ test('fork into master', async t => {
   .on('idle', add => {
     add(subIdleAction)
   })
-
-  sub.fork(async () => {
-    await setTimeout(100)
-    return true
-  }, master)
-
-  sub.exit(async () => {
-    await setTimeout(100)
-    // Never exit
+  .exit(async () => {
     return false
   })
 
@@ -150,9 +166,30 @@ test('fork into master', async t => {
     return false
   }, sub)
 
+  const sub2Action = createAction(async () => {
+    await setTimeout(100)
+  })
+
+  const sub2 = sub.fork(async () => {
+    await subActionPromise
+    return true
+  })
+  .name('sub2')
+  .on('idle', add => {
+    add(sub2Action)
+  })
+  .exit(async () => {
+    // Never exit
+    return false
+  })
+
+  sub2.fork(async () => {
+    return true
+  }, master)
+
   master.start()
 
-  await promise
+  await masterPromise
   master.pause()
 
   t.deepEqual(actions, [1, 2, 2, 3, 4, 4, 1, 2, 2])

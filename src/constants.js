@@ -33,6 +33,8 @@ const DO_EMIT = Symbol('#doEmit')
 const DO_EMIT_ASYNC = Symbol('#doEmitAsync')
 const ON_ERROR_ONCE = Symbol('#onErrorOnce')
 
+const KEY_GET_NAME = Symbol('#getName')
+
 
 module.exports = {
   USERAGENT_CHROME,
@@ -52,5 +54,6 @@ module.exports = {
   DO_RESET,
   DO_EMIT,
   DO_EMIT_ASYNC,
-  ON_ERROR_ONCE
+  ON_ERROR_ONCE,
+  KEY_GET_NAME
 }

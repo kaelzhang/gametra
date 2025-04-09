@@ -26,7 +26,8 @@ const {
   DO_RESET,
   DO_EMIT,
   DO_EMIT_ASYNC,
-  ON_ERROR_ONCE
+  ON_ERROR_ONCE,
+  KEY_GET_NAME
 } = require('../constants')
 
 const {
@@ -334,6 +335,7 @@ class Scheduler extends Pausable {
     const whenever = new Whenever(when).then(async () => {
       await this.#forkTo(scheduler)
     })
+    .name(this[KEY_GET_NAME])
 
     this.#addWhenever(whenever)
 
@@ -397,6 +399,7 @@ class Scheduler extends Pausable {
       this[DO_EXIT]()
       whenever.resume()
     })
+    .name(this[KEY_GET_NAME])
 
     this.#addWhenever(whenever)
   }
