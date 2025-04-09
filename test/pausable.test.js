@@ -7,6 +7,10 @@ const {
 const {inspect} = require('node:util')
 
 const {Pausable} = require('../src/driver/pausable')
+const {
+  DO_EMIT,
+  DO_EMIT_ASYNC
+} = require('../src/constants')
 
 
 test('pausable', async t => {
@@ -35,7 +39,7 @@ test('pausable: events when paused', async t => {
   })
 
   pausable.pause()
-  pausable.emit('foo')
+  pausable[DO_EMIT]('foo')
 
   t.is(count, 0)
 
@@ -69,7 +73,7 @@ test('pausable events', async t => {
     baz = n + count ++
   })
 
-  const result = await pausable.emitAsync('foo', 10)
+  const result = await pausable[DO_EMIT_ASYNC]('foo', 10)
 
   t.is(result, true)
   t.is(foo, 10)
@@ -79,7 +83,7 @@ test('pausable events', async t => {
   pausable.pause()
   pausable.pause()
 
-  const promise = pausable.emitAsync('foo', 100).then(result => {
+  const promise = pausable[DO_EMIT_ASYNC]('foo', 100).then(result => {
     t.is(result, true)
     t.is(foo, 103)
     t.is(bar, 104)
@@ -97,21 +101,21 @@ test('pausable events', async t => {
 
   pausable.off('foo', barHandler)
 
-  t.is(await pausable.emitAsync('foo', 1000), true)
+  t.is(await pausable[DO_EMIT_ASYNC]('foo', 1000), true)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
 
   pausable.removeAllListeners('foo')
 
-  t.is(await pausable.emitAsync('foo', 10000), false)
+  t.is(await pausable[DO_EMIT_ASYNC]('foo', 10000), false)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
 
   pausable.removeAllListeners()
 
-  t.is(await pausable.emitAsync('foo', 10000), false)
+  t.is(await pausable[DO_EMIT_ASYNC]('foo', 10000), false)
   t.is(foo, 1006)
   t.is(bar, 104)
   t.is(baz, 1007)
@@ -129,5 +133,5 @@ test('pausable error', async t => {
     t.is(error.host, pausable)
   })
 
-  await pausable.emitAsync('foo')
+  await pausable[DO_EMIT_ASYNC]('foo')
 })

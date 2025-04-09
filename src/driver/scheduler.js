@@ -174,7 +174,7 @@ class Scheduler extends Pausable {
     }
 
     this.#errorSubscribed = true
-    this.once(EVENT_ERROR, handler)
+    this.on(EVENT_ERROR, handler)
   }
 
   [DO_EMIT] (event, payload) {
