@@ -31,6 +31,7 @@ const DO_EXIT = Symbol('#doExit')
 const DO_RESET = Symbol('#doReset')
 const DO_EMIT = Symbol('#doEmit')
 const DO_EMIT_ASYNC = Symbol('#doEmitAsync')
+const ON_ERROR_ONCE = Symbol('#onErrorOnce')
 
 
 module.exports = {
@@ -50,5 +51,6 @@ module.exports = {
   DO_EXIT,
   DO_RESET,
   DO_EMIT,
-  DO_EMIT_ASYNC
+  DO_EMIT_ASYNC,
+  ON_ERROR_ONCE
 }

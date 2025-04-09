@@ -145,6 +145,11 @@ test('fork into master', async t => {
     return false
   })
 
+  // Dead fork
+  sub.fork(async () => {
+    return false
+  }, sub)
+
   master.start()
 
   await promise

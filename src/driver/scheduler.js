@@ -25,7 +25,8 @@ const {
   DO_EXIT,
   DO_RESET,
   DO_EMIT,
-  DO_EMIT_ASYNC
+  DO_EMIT_ASYNC,
+  ON_ERROR_ONCE
 } = require('../constants')
 
 const {
@@ -164,11 +165,7 @@ class Scheduler extends Pausable {
     this.#forkChain = chain
   }
 
-  get master () {
-    return this.#master
-  }
-
-  onErrorOnce (handler) {
+  [ON_ERROR_ONCE] (handler) {
     if (this.#errorSubscribed) {
       return
     }
@@ -340,7 +337,7 @@ class Scheduler extends Pausable {
 
     this.#addWhenever(whenever)
 
-    scheduler.onErrorOnce(errorInfo => {
+    scheduler[ON_ERROR_ONCE](errorInfo => {
       this[DO_EMIT](EVENT_ERROR, errorInfo)
     })
 
