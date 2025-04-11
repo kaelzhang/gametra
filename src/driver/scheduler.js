@@ -47,10 +47,12 @@ class Whenever extends Pausable {
   #when
   #then
   #args
+  #negate
 
-  constructor (when) {
+  constructor (when, negate) {
     super()
     this.#when = makeWhen(when)
+    this.#negate = negate
   }
 
   then (then) {
@@ -104,7 +106,11 @@ class Whenever extends Pausable {
 
       // Only if the condition is true,
       // it will go into the then block
-      if (yes) {
+      if (
+        this.#negate
+          ? !yes
+          : yes
+      ) {
         if (this.paused) {
           // If already paused, we should skip the processing of `then`,
           // and wait for the scheduler to resume, and restart checking again,
@@ -316,6 +322,7 @@ class Scheduler extends Pausable {
   fork (
     when,
     {
+      negate = false,
       // Two schedulers could fork into a same scheduler
       scheduler = new Scheduler({
         master: false
@@ -324,7 +331,7 @@ class Scheduler extends Pausable {
       onBack
     } = {}
   ) {
-    const whenever = new Whenever(when).then(async () => {
+    const whenever = new Whenever(when, negate).then(async () => {
       await this.#forkTo(scheduler, onFork, onBack)
     })
     .name(this[KEY_GET_NAME])
