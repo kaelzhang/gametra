@@ -105,13 +105,18 @@ test('scheduler pause with action performers', async t => {
     static PERFORMER_OPTIONS = {
       interval: 50
     }
+    static REQUIRED_ARGS = 1
 
-    async _perform () {
-      count ++
+    async _perform (delta) {
+      count += delta
     }
   }
 
-  const action = new TestAction().queue(true)
+  const action = new TestAction()
+  .partial(1)
+  .queue(true)
+  // Test clone
+  .clone()
 
   const scheduler = new Scheduler()
   .on('idle', add => {

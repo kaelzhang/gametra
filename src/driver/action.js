@@ -32,6 +32,20 @@ class Action extends Pausable {
     )
   }
 
+  clone () {
+    const Action = this.constructor
+
+    return new Action()
+    .partial(...this.#partial)
+    .options(this.#performerOptions)
+    .queue(this.#useQueue)
+  }
+
+  // So that it can be used in sub classes
+  get canceled () {
+    return this.#canceled
+  }
+
   async cancel () {
     if (this.#performers) {
       for (const performer of this.#performers) {
@@ -41,8 +55,10 @@ class Action extends Pausable {
     }
 
     if (typeof this._cancel === 'function') {
-      return this._cancel()
+      this._cancel()
     }
+
+    this.#canceled = true
   }
 
   queue (queue = true) {

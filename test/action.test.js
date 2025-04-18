@@ -52,18 +52,15 @@ test('partial', async t => {
 
 test('_cancel', async t => {
   class TestAction extends Action {
-    #canceled = false
-
     async _perform () {
       await setTimeout(100)
-      return this.#canceled
+      return this.canceled
         ? 3
         : 2
     }
 
     _cancel () {
-      this.#canceled = true
-      return 3
+      // do nothing
     }
   }
 
@@ -75,7 +72,7 @@ test('_cancel', async t => {
   })
 
   await setTimeout(1)
-  t.is(await action.cancel(), 3)
+  action.cancel()
 
   await setTimeout(100)
   t.is(resolved, 3)

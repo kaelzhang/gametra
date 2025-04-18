@@ -1,6 +1,6 @@
 {
   "name": "gametra",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "A cloud game driver and automator",
   "main": "src/index.js",
   "scripts": {
