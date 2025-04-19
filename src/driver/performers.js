@@ -80,30 +80,39 @@ class ThrottledPerformer extends Pausable {
     return ignore
   }
 
+  // TODO: more tests
   async #doWait (...args) {
     const last = await this.#lastAccessor.get.call(this, ...args)
+    const noLast = last === UNDEFINED
 
-    const wait = last === UNDEFINED
+    const wait = noLast
       ? 0
       : this.#throttle - (Date.now() - last)
 
+    const shouldIgnore = await this.#processWait(wait)
+
+    if (
+      // If the action will be performed, then update the last processed time
+      !shouldIgnore
+      // If there is no last processed time, then update the last processed time
+      || noLast
+    ) {
+      await this.#updateLastProcessed(...args)
+    }
+
+    return shouldIgnore
+  }
+
+  async #processWait (wait) {
     if (this.#mode === THROTTLE_TYPE.QUEUE) {
       if (wait > 0) {
         await setTimeout(wait)
       }
 
-      await this.#updateLastProcessed(...args)
       return false
     }
 
-    if (wait > 0) {
-      // Just ignore the action
-      return true
-    }
-
-    // Otherwise, the action should be performed
-    await this.#updateLastProcessed(...args)
-    return false
+    return wait > 0
   }
 
   async #updateLastProcessed (...args) {
