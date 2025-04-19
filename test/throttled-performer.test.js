@@ -86,40 +86,6 @@ test('throttled action cancel', async t => {
   t.is(performTimes.length, 0)
 })
 
-
-// test.only('throttled action pause', async t => {
-//   const start = Date.now()
-
-//   class TestAction extends Action {
-//     static PERFORMER = ThrottledPerformer
-
-//     async _perform () {
-//       return Date.now() - start
-//     }
-//   }
-
-//   const action = new TestAction()
-
-//   let resolved
-
-//   action.perform().then(result => {
-//     resolved = result
-//   })
-
-//   // Call pause before resume, and it should be ok
-//   action.resume()
-
-//   action.pause()
-//   await setTimeout(100)
-//   action.resume()
-
-//   await setTimeout(1)
-
-//   console.log('resolved', resolved)
-//   t.true(resolved >= 100)
-// })
-
-
 test('action performs after throttle time', async t => {
   let last = Date.now()
 
@@ -232,4 +198,57 @@ test('mode', async t => {
 
   t.is(count, 5)
   t.deepEqual(result3, [1, 1, 1])
+})
+
+
+test('throttled last accessor unexpected load', async t => {
+  const LAST_CHECKED_KEY = Symbol('lastChecked')
+
+  let loaded = 0
+
+  class TestAction extends Action {
+    static PERFORMER = ThrottledPerformer
+    static PERFORMER_OPTIONS = {
+      throttleMode: 'ignore',
+      throttle: 100,
+      throttleLastAccessor: {
+        async get () {
+          let lastChecked = this[LAST_CHECKED_KEY]
+
+          if (!lastChecked) {
+            await setTimeout(100)
+            lastChecked = Date.now() - 200
+            loaded ++
+          }
+
+          return lastChecked
+        },
+
+        async set (value, delegate) {
+          await setTimeout(100)
+
+          this[LAST_CHECKED_KEY] = value
+        }
+      }
+    }
+
+    _perform () {
+      return true
+    }
+  }
+
+  const action = new TestAction()
+
+  const result = await Promise.all([
+    action.perform(),
+    action.perform(),
+    action.perform(),
+    action.perform()
+  ])
+
+  let u
+
+  t.deepEqual(result, [true, u, u, u])
+
+  t.is(loaded, 1)
 })

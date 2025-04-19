@@ -80,7 +80,6 @@ class ThrottledPerformer extends Pausable {
     return ignore
   }
 
-  // TODO: more tests
   async #doWait (...args) {
     const last = await this.#lastAccessor.get.call(this, ...args)
     const noLast = last === UNDEFINED
