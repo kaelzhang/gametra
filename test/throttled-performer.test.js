@@ -220,13 +220,15 @@ test('throttled last accessor unexpected load', async t => {
 
           if (!lastChecked) {
             await setTimeout(100)
+            // Actually we do not get the data
+
             loaded ++
           }
 
           return lastChecked
         },
 
-        async set (value, delegate) {
+        async set (value) {
           await setTimeout(100)
 
           this[LAST_CHECKED_KEY] = value
