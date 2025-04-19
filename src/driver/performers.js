@@ -55,12 +55,12 @@ class ThrottledPerformer extends Pausable {
   }
 
   async #wait (...args) {
+    // Even if a microtask waits for the promise,
+    // it might still fails to get the lock again and again
     while (this.#throttlePromise) {
       if (this.#mode === THROTTLE_TYPE.IGNORE) {
         // There is already a task is running,
         // so just ignore the current task
-
-        // TODO: more tests
         return true
       }
 

@@ -204,6 +204,7 @@ test('mode', async t => {
 test('throttled last accessor unexpected load', async t => {
   const LAST_CHECKED_KEY = Symbol('lastChecked')
 
+  let accessed = 0
   let loaded = 0
 
   class TestAction extends Action {
@@ -213,11 +214,12 @@ test('throttled last accessor unexpected load', async t => {
       throttle: 100,
       throttleLastAccessor: {
         async get () {
+          accessed ++
+
           let lastChecked = this[LAST_CHECKED_KEY]
 
           if (!lastChecked) {
             await setTimeout(100)
-            lastChecked = Date.now() - 200
             loaded ++
           }
 
@@ -246,9 +248,8 @@ test('throttled last accessor unexpected load', async t => {
     action.perform()
   ])
 
-  let u
-
-  t.deepEqual(result, [true, u, u, u])
+  t.deepEqual(result, [true, undefined, undefined, undefined])
 
   t.is(loaded, 1)
+  t.is(accessed, 1)
 })
