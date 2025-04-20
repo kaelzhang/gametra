@@ -133,8 +133,8 @@ ipcRenderer.on('pixel-pick-complete', (event, data) => {
 
 jumpBtn.addEventListener('click', () => {
   ipcRenderer.send('custom-event', 'jump', {
-    deltaX: jumpDeltaXInput.value,
-    deltaY: jumpDeltaYInput.value
+    deltaX: parseInt(jumpDeltaXInput.value, 10),
+    deltaY: parseInt(jumpDeltaYInput.value, 10)
   })
 })
 

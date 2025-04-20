@@ -13,6 +13,12 @@ const randomStartingPoint = (x, y, width, height) => {
   }
 }
 
+
+const makeEasing = easing => typeof easing === 'function'
+  ? easing
+  : Easing[easing]
+
+
 class EventSynthesizer {
   #delegate
   #mouseMoveSpeed
@@ -31,35 +37,38 @@ class EventSynthesizer {
     this.#mouseMoveSpeed = mouseMoveSpeed
     this.#mouseEventInterval = mouseEventInterval
 
-    this.#easing = typeof easing === 'function'
-      ? easing
-      : Easing[easing]
+    this.#easing = makeEasing(easing)
   }
 
   // Imitate the real mouse move of human
-  async mouseMove (x, y) {
+  async mouseMove (x, y, {
+    easing = this.#easing,
+    speed = this.#mouseMoveSpeed,
+    interval = this.#mouseEventInterval
+  } = {}) {
     const x0 = this.#delegate.x
     const y0 = this.#delegate.y
 
     const distance = ((x - x0) ** 2 + (y - y0) ** 2) ** .5
-    const time = Math.floor(distance / this.#mouseMoveSpeed)
+    const time = Math.floor(distance / speed)
+    const steps = Math.floor(time / interval)
 
-    const steps = Math.floor(time / this.#mouseEventInterval)
+    const easingFn = makeEasing(easing)
 
     if (steps > 1) {
       const deltaX = x - x0
       const deltaY = y - y0
 
       for (let i = 1; i < steps; i ++) {
-        const t = this.#mouseEventInterval * i / time
+        const t = interval * i / time
 
         // `delegate#mouseMove` already rounds the coordinates to integers
         await this.#delegate.mouseMove(
-          x0 + deltaX * this.#easing(t),
-          y0 + deltaY * this.#easing(t)
+          x0 + deltaX * easingFn(t),
+          y0 + deltaY * easingFn(t)
         )
 
-        await setTimeout(this.#mouseEventInterval)
+        await setTimeout(interval)
       }
     }
 
@@ -83,17 +92,42 @@ class EventSynthesizer {
     }
   }
 
-  async press (accelerator) {
+  async press (accelerator, {
+    delay = 0
+  } = {}) {
     await this.#delegate.keyDown(accelerator)
+
+    if (delay) {
+      await setTimeout(delay)
+    }
+
     await this.#delegate.keyUp(accelerator)
   }
 
-  async swipe (deltaX, deltaY) {
+  async swipe (deltaX, deltaY, {
+    duration = 0
+  } = {}) {
     await this.#delegate.mouseDown()
-    await this.mouseMove(
-      this.#delegate.x + deltaX,
-      this.#delegate.y + deltaY
-    )
+
+    if (!duration) {
+      await this.mouseMove(
+        this.#delegate.x + deltaX,
+        this.#delegate.y + deltaY
+      )
+    } else {
+      const distance = ((deltaX ** 2 + deltaY ** 2) ** .5)
+      const speed = distance / duration
+
+      await this.mouseMove(
+        this.#delegate.x + deltaX,
+        this.#delegate.y + deltaY,
+        {
+          speed,
+          easing: 'Linear'
+        }
+      )
+    }
+
     await this.#delegate.mouseUp()
   }
 }
