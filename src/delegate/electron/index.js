@@ -14,7 +14,8 @@ const electron = require('electron')
 const {
   UNDEFINED,
   NOOP,
-  BUTTON_LEFT
+  BUTTON_LEFT,
+  KEY_STORAGE
 } = require('../../constants')
 
 const {
@@ -38,7 +39,6 @@ class ElectronDelegate extends EventEmitter {
   #controlPanel
   #debug
   #downloadPath
-  // #userDataPath
   #user
   #initialMousePosition
   #readyPromise
@@ -47,10 +47,11 @@ class ElectronDelegate extends EventEmitter {
   #x
   #y
 
+  #storage
+
   constructor ({
     debug = false,
     downloadPath,
-    userDataPath,
     user,
     initialMousePosition = getInitialMousePosition
   } = {}) {
@@ -68,10 +69,6 @@ class ElectronDelegate extends EventEmitter {
 
     this.#init()
 
-    // if (userDataPath) {
-    //   app.setPath('userData', userDataPath)
-    // }
-
     app.whenReady().then(() => {
       this.#resolveReady()
       this.#resolveReady = NOOP
@@ -86,40 +83,18 @@ class ElectronDelegate extends EventEmitter {
     })
   }
 
+  [KEY_STORAGE] (storage) {
+    this.#storage = storage
+  }
+
   #init () {
     const {promise, resolve} = Promise.withResolvers()
     this.#readyPromise = promise
     this.#resolveReady = resolve
   }
 
-  #getStoragePath () {
-    return join(this.#downloadPath, '.storage.json')
-  }
-
-  // TODO: methods related to storage should not be in delegate
-  async updateStorage (updater) {
-    const filepath = this.#getStoragePath()
-    let storage = {}
-
-    try {
-      storage = await this.getStorage(filepath)
-    } catch (error) {
-      // ignore
-    }
-
-    storage = updater(storage)
-
-    await fs.writeFile(filepath, JSON.stringify(storage))
-    return storage
-  }
-
-  async getStorage (filepath = this.#getStoragePath()) {
-    const content = await fs.readFile(filepath, 'utf-8')
-    return JSON.parse(content)
-  }
-
   async #increaseBatchId () {
-    const updated = await this.updateStorage(storage => {
+    const updated = await this.#storage.update(storage => {
       storage.batchId = (storage.batchId || this.#batchId) + 1
       return storage
     })

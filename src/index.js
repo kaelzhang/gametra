@@ -18,6 +18,7 @@ const {
   createAction
 } = require('./driver/tools')
 const {Scheduler} = require('./driver/scheduler')
+const {SimpleJsonStorage} = require('./driver/storage')
 
 module.exports = {
   Game,
@@ -31,5 +32,6 @@ module.exports = {
   ElectronDelegate,
   Viewport,
   compareImages,
-  Scheduler
+  Scheduler,
+  SimpleJsonStorage
 }

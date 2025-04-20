@@ -1,10 +1,15 @@
 const {
-  USERAGENT_CHROME
+  USERAGENT_CHROME,
+  KEY_STORAGE,
+  KEY_PERFORM_DELEGATED,
+  KEY_PERFORM_SYNTHESIZED,
+  KEY_PERFORM_STORAGE
 } = require('../constants')
 
 const {
   Viewport
 } = require('../util')
+const { SimpleJsonStorage } = require('./storage')
 
 const {
   EventSynthesizer
@@ -20,8 +25,12 @@ class Game {
   #height
   #delegate
   #synthesizer
+  #storage
 
   constructor (delegate, url, {
+    storage = new SimpleJsonStorage({
+      path: '.storage.json'
+    }),
     userAgent = USERAGENT_CHROME,
     // The default ratio of the game window is 16:9
     width = 1280,
@@ -33,8 +42,11 @@ class Game {
     this.#originalHeight = this.#height = height
 
     this.#delegate = delegate
+    this.#delegate[KEY_STORAGE](storage)
+
+    this.#storage = storage
+
     this.#synthesizer = new EventSynthesizer(delegate)
-    // this.#scheduler = new Scheduler(this)
   }
 
   async launch () {
@@ -62,12 +74,16 @@ class Game {
     return await action.perform(this)
   }
 
-  _performDelegated (method, ...args) {
+  [KEY_PERFORM_DELEGATED] (method, ...args) {
     return this.#delegate[method](...args)
   }
 
-  _performSynthesized (method, ...args) {
+  [KEY_PERFORM_SYNTHESIZED] (method, ...args) {
     return this.#synthesizer[method](...args)
+  }
+
+  [KEY_PERFORM_STORAGE] (method, ...args) {
+    return this.#storage[method](...args)
   }
 }
 
@@ -85,7 +101,7 @@ const DELEGATE_METHODS = [
 
 DELEGATE_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
-    return this._performDelegated(method, ...args)
+    return this[KEY_PERFORM_DELEGATED](method, ...args)
   }
 })
 
@@ -99,7 +115,20 @@ const SYNTHESIZED_METHODS = [
 
 SYNTHESIZED_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
-    return this._performSynthesized(method, ...args)
+    return this[KEY_PERFORM_SYNTHESIZED](method, ...args)
+  }
+})
+
+
+const STORAGE_METHODS = [
+  'load',
+  'save',
+  'update'
+]
+
+STORAGE_METHODS.forEach(method => {
+  Game.prototype[method] = function (...args) {
+    return this[KEY_PERFORM_STORAGE](method, ...args)
   }
 })
 
