@@ -11,40 +11,50 @@ class SimpleJsonStorage {
   #saveLock
 
   constructor({
-    pathfilepath
-  } = {}) {
+    filepath
+  }) {
     this.#filepath = filepath
   }
 
-  async update (updater) {
-    const storage = await this.load()
-    const updated = updater(storage)
-    await this.save(updated)
-    return updated
-  }
-
-  async #wait () {
+  async #update (updater) {
     while (this.#saveLock) {
       await this.#saveLock
     }
-  }
-
-  async save (storage) {
-    await this.#wait()
 
     const {promise, resolve} = Promise.withResolvers()
     this.#saveLock = promise
 
-    await fs.writeFile(filepath, JSON.stringify(storage))
+    const updated = await updater.call(this)
+    await fs.writeFile(this.#filepath, JSON.stringify(updated))
+
     resolve()
     this.#saveLock = UNDEFINED
 
-    return storage
+    return updated
+  }
+
+  async save (storage) {
+    return this.#update(() => storage)
+  }
+
+  async update (updater) {
+    return this.#update(
+      async () => {
+        const storage = await this.#load()
+        return updater(storage)
+      }
+    )
   }
 
   async load () {
-    await this.#wait()
+    while (this.#saveLock) {
+      await this.#saveLock
+    }
 
+    return this.#load()
+  }
+
+  async #load () {
     const content = await fs.readFile(this.#filepath, 'utf-8')
     return JSON.parse(content)
   }

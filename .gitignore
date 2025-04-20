@@ -3,6 +3,8 @@
 !**/downloads/README.md
 **/assets/
 
+.storage.json
+
 # Node, Coverage, NPM
 /.nyc_output
 /coverage
