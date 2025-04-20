@@ -98,7 +98,6 @@ const DELEGATE_METHODS = [
   'screenshot'
 ]
 
-
 DELEGATE_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
     return this[KEY_PERFORM_DELEGATED](method, ...args)
@@ -111,7 +110,6 @@ const SYNTHESIZED_METHODS = [
   'press',
   'swipe'
 ]
-
 
 SYNTHESIZED_METHODS.forEach(method => {
   Game.prototype[method] = function (...args) {
@@ -127,7 +125,9 @@ const STORAGE_METHODS = [
 ]
 
 STORAGE_METHODS.forEach(method => {
-  Game.prototype[method] = function (...args) {
+  const gameMethod = `${method}Storage`
+
+  Game.prototype[gameMethod] = function (...args) {
     return this[KEY_PERFORM_STORAGE](method, ...args)
   }
 })

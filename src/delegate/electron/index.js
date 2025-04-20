@@ -87,20 +87,8 @@ class ElectronDelegate extends EventEmitter {
     this.#storage = storage
   }
 
-  #init () {
-    const {promise, resolve} = Promise.withResolvers()
-    this.#readyPromise = promise
-    this.#resolveReady = resolve
-  }
-
-  async #increaseBatchId () {
-    const updated = await this.#storage.update(storage => {
-      storage.batchId = (storage.batchId || this.#batchId) + 1
-      return storage
-    })
-
-    this.#batchId = updated.batchId
-  }
+  // Public Methods
+  /////////////////////////////////////////////////////////////////////////
 
   async launch ({
     url,
@@ -129,89 +117,6 @@ class ElectronDelegate extends EventEmitter {
   reload () {
     if (this.#mainWindow) {
       this.#mainWindow.reload()
-    }
-  }
-
-  async #createWindow ({
-    url,
-    width,
-    height,
-    userAgent
-  }) {
-    const webPreferences = {
-      preload: join(__dirname, 'main-window.js'),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-
-    if (this.#user) {
-      console.log('webPreferences >>>>', this.#user)
-      webPreferences.partition = `persist:${this.#user}`
-    }
-
-    const mainWindow = this.#mainWindow = new BrowserWindow({
-      width,
-      height,
-      useContentSize: true,
-      webPreferences,
-      resizable: false
-    })
-
-    const {webContents} = mainWindow
-    webContents.setUserAgent(userAgent)
-
-    if (this.#debug) {
-      // open devtools in exeternal window
-      webContents.openDevTools({
-        mode: 'undocked'
-      })
-    }
-
-    this.#createControlPanel()
-    this.#initIPCHandlers()
-
-    const {promise, resolve} = Promise.withResolvers()
-
-    webContents.on('did-finish-load', () => {
-      resolve()
-
-      // Focus the window to make the click event work
-      webContents.focus()
-    })
-
-    await mainWindow.loadURL(url)
-
-    const initPos = this.#initialMousePosition(width, height)
-
-    this.#x = initPos.x
-    this.#y = initPos.y
-
-    return promise
-  }
-
-  #createControlPanel () {
-    const mainWindow = this.#mainWindow
-    const bounds = mainWindow.getBounds()
-
-    const controlPanel = this.#controlPanel = new BrowserWindow({
-      width: 200,
-      height: bounds.height,
-      x: bounds.x + bounds.width,
-      y: bounds.y,
-      resizable: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false
-      }
-    })
-
-    controlPanel.loadFile(join(__dirname, 'control-panel.html'))
-
-    if (this.#debug) {
-      // open devtools in exeternal window
-      controlPanel.webContents.openDevTools({
-        mode: 'undocked'
-      })
     }
   }
 
@@ -312,6 +217,114 @@ class ElectronDelegate extends EventEmitter {
     })
   }
 
+  focus () {
+    this.#mainWindow.webContents.focus()
+  }
+
+  // Returns a Jimp image
+  async screenshot (viewport) {
+    const mainWindow = this.#mainWindow
+
+    if (!viewport) {
+      viewport = mainWindow.getBounds()
+    }
+
+    const image = await mainWindow.webContents.capturePage(viewport)
+    return encodeNativeBMPImage(image)
+  }
+
+  // End of Public Methods /////////////////////////////////////////////////
+
+
+  #init () {
+    const {promise, resolve} = Promise.withResolvers()
+    this.#readyPromise = promise
+    this.#resolveReady = resolve
+  }
+
+  async #createWindow ({
+    url,
+    width,
+    height,
+    userAgent
+  }) {
+    const webPreferences = {
+      preload: join(__dirname, 'main-window.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+
+    if (this.#user) {
+      console.log('webPreferences >>>>', this.#user)
+      webPreferences.partition = `persist:${this.#user}`
+    }
+
+    const mainWindow = this.#mainWindow = new BrowserWindow({
+      width,
+      height,
+      useContentSize: true,
+      webPreferences,
+      resizable: false
+    })
+
+    const {webContents} = mainWindow
+    webContents.setUserAgent(userAgent)
+
+    if (this.#debug) {
+      // open devtools in exeternal window
+      webContents.openDevTools({
+        mode: 'undocked'
+      })
+    }
+
+    this.#createControlPanel()
+    this.#initIPCHandlers()
+
+    const {promise, resolve} = Promise.withResolvers()
+
+    webContents.on('did-finish-load', () => {
+      resolve()
+
+      // Focus the window to make the click event work
+      webContents.focus()
+    })
+
+    await mainWindow.loadURL(url)
+
+    const initPos = this.#initialMousePosition(width, height)
+
+    this.#x = initPos.x
+    this.#y = initPos.y
+
+    return promise
+  }
+
+  #createControlPanel () {
+    const mainWindow = this.#mainWindow
+    const bounds = mainWindow.getBounds()
+
+    const controlPanel = this.#controlPanel = new BrowserWindow({
+      width: 200,
+      height: bounds.height,
+      x: bounds.x + bounds.width,
+      y: bounds.y,
+      resizable: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+
+    controlPanel.loadFile(join(__dirname, 'control-panel.html'))
+
+    if (this.#debug) {
+      // open devtools in exeternal window
+      controlPanel.webContents.openDevTools({
+        mode: 'undocked'
+      })
+    }
+  }
+
   // Add IPC handlers
   // ------------------------------------------------------------
 
@@ -397,20 +410,13 @@ class ElectronDelegate extends EventEmitter {
     })
   }
 
-  focus () {
-    this.#mainWindow.webContents.focus()
-  }
+  async #increaseBatchId () {
+    const updated = await this.#storage.update(storage => {
+      storage.batchId = (storage.batchId || this.#batchId) + 1
+      return storage
+    })
 
-  // Returns a Jimp image
-  async screenshot (viewport) {
-    const mainWindow = this.#mainWindow
-
-    if (!viewport) {
-      viewport = mainWindow.getBounds()
-    }
-
-    const image = await mainWindow.webContents.capturePage(viewport)
-    return encodeNativeBMPImage(image)
+    this.#batchId = updated.batchId
   }
 
   async #captureRegion(viewport) {
